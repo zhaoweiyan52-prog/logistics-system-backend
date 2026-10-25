@@ -1,0 +1,1788 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物流管理系统</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/element-plus@2.7.8/dist/index.css">
+<script src="https://cdn.jsdelivr.net/npm/vue@3.4.38/dist/vue.global.prod.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/element-plus@2.7.8/dist/index.full.min.js"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;height:100vh;overflow:hidden;}
+  #app{height:100%;}
+  [v-cloak]{display:none;}
+
+  /* ===== 顶部导航栏 ===== */
+  .topbar{position:fixed;top:0;left:0;right:0;height:60px;background:#fff;border-bottom:1px solid #e2e8f0;
+    display:flex;align-items:center;padding:0 20px;z-index:100;gap:16px;}
+  .logo{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+  .logo-icon{width:34px;height:34px;border-radius:8px;background:#2563eb;color:#fff;display:flex;
+    align-items:center;justify-content:center;font-size:18px;}
+  .logo-name{font-size:17px;font-weight:700;color:#0f172a;white-space:nowrap;}
+  .top-search{flex:1;max-width:420px;position:relative;}
+  .search-hits{position:absolute;top:40px;left:0;right:0;background:#fff;border:1px solid #e2e8f0;
+    border-radius:8px;box-shadow:0 8px 24px rgba(15,23,42,.12);overflow:hidden;z-index:200;}
+  .search-hit{padding:9px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;gap:12px;}
+  .search-hit:hover{background:#eff6ff;}
+  .search-hit .sub{color:#94a3b8;font-size:12px;white-space:nowrap;}
+  .top-right{margin-left:auto;display:flex;align-items:center;gap:14px;flex-shrink:0;}
+  .bell{position:relative;font-size:19px;cursor:pointer;color:#475569;line-height:1;padding:6px;}
+  .bell:hover{color:#2563eb;}
+  .bell .dot{position:absolute;top:3px;right:3px;width:8px;height:8px;border-radius:50%;background:#ef4444;border:2px solid #fff;}
+  .user-box{display:flex;align-items:center;gap:8px;cursor:pointer;padding:5px 8px;border-radius:8px;}
+  .user-box:hover{background:#f1f5f9;}
+  .avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,#3b82f6,#1d4ed8);
+    color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;}
+  .user-name{font-size:14px;color:#334155;}
+  .caret{font-size:11px;color:#94a3b8;}
+
+  .tag-mock{margin-right:4px;padding:3px 8px;border-radius:5px;font-size:12px;background:#fef3c7;color:#92400e;border:1px solid #fcd34d;}
+  .role-tag{padding:4px 12px;border-radius:6px;font-size:13px;cursor:pointer;border:1px solid #e2e8f0;color:#475569;}
+  .role-tag:hover{border-color:#93c5fd;color:#2563eb;}
+
+  /* ===== 侧边栏 ===== */
+  .sidebar{position:fixed;top:60px;left:0;bottom:0;width:240px;background:#1e293b;display:flex;
+    flex-direction:column;transition:width .25s;z-index:90;overflow:hidden;}
+  .sidebar.collapsed{width:64px;}
+  .menu{flex:1;overflow-y:auto;overflow-x:hidden;padding:10px 0;}
+  .menu::-webkit-scrollbar{width:4px;}
+  .menu::-webkit-scrollbar-thumb{background:#475569;border-radius:2px;}
+  .m-item{display:flex;align-items:center;padding:13px 22px;color:#cbd5e1;cursor:pointer;position:relative;
+    font-size:14px;white-space:nowrap;transition:background .15s;}
+  .m-item:hover{background:#334155;}
+  .m-item.active{background:#0f172a;color:#fff;}
+  .m-item.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:#2563eb;}
+  .m-icon{width:20px;text-align:center;font-size:16px;flex-shrink:0;}
+  .m-label{margin-left:12px;}
+  .collapsed .m-item{padding:13px 0;justify-content:center;}
+  .collapsed .m-label{display:none;}
+  .sidebar-bottom{padding:12px;border-top:1px solid #334155;}
+  .collapse-btn{width:100%;height:34px;background:transparent;border:1px solid #475569;border-radius:6px;
+    color:#94a3b8;cursor:pointer;font-size:14px;}
+  .collapse-btn:hover{background:#334155;color:#fff;}
+
+  /* ===== 主内容区 ===== */
+  .main{margin-left:240px;margin-top:60px;height:calc(100vh - 60px);overflow-y:auto;transition:margin-left .25s;padding:20px 24px;}
+  .main.expanded{margin-left:64px;}
+  .breadcrumb{display:flex;align-items:center;gap:8px;font-size:13px;color:#94a3b8;margin-bottom:16px;}
+  .breadcrumb .cur{color:#2563eb;font-weight:500;}
+  .page-title{font-size:20px;font-weight:700;color:#0f172a;margin-bottom:18px;}
+
+  .card{background:#fff;border-radius:10px;padding:20px;box-shadow:0 1px 3px rgba(15,23,42,.06);margin-bottom:16px;}
+  .card-title{font-size:15px;font-weight:600;color:#334155;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between;}
+
+  .stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:16px;}
+  .stat-card{background:#fff;border-radius:10px;padding:18px;box-shadow:0 1px 3px rgba(15,23,42,.06);cursor:default;}
+  .stat-card.clickable{cursor:pointer;transition:transform .15s,box-shadow .15s;}
+  .stat-card.clickable:hover{transform:translateY(-2px);box-shadow:0 6px 16px rgba(37,99,235,.15);}
+  .stat-label{font-size:13px;color:#64748b;}
+  .stat-value{font-size:26px;font-weight:700;color:#0f172a;margin-top:6px;}
+  .stat-sub{font-size:12px;color:#94a3b8;margin-top:4px;}
+
+  .chart{display:flex;align-items:flex-end;gap:14px;height:200px;padding-top:10px;}
+  .bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;height:100%;justify-content:flex-end;}
+  .bar{width:60%;max-width:42px;background:linear-gradient(180deg,#60a5fa,#2563eb);border-radius:5px 5px 0 0;transition:height .4s;min-height:3px;}
+  .bar-num{font-size:12px;color:#475569;}
+  .bar-day{font-size:12px;color:#94a3b8;}
+
+  .cap-row{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+  .cap-name{width:90px;font-size:13px;color:#475569;flex-shrink:0;}
+  .cap-bar{flex:1;height:14px;background:#e2e8f0;border-radius:7px;overflow:hidden;}
+  .cap-fill{height:100%;border-radius:7px;}
+  .cap-num{width:110px;font-size:12px;color:#64748b;text-align:right;flex-shrink:0;}
+
+  .cell-main{font-size:13px;color:#334155;font-weight:500;line-height:1.5;}
+  .cell-sub{font-size:12px;color:#94a3b8;line-height:1.5;}
+  .cell-fee{font-size:13px;color:#0f172a;font-weight:600;}
+
+  .trace-item{display:flex;gap:12px;}
+  .trace-line{display:flex;flex-direction:column;align-items:center;}
+  .trace-dot{width:10px;height:10px;border-radius:50%;background:#cbd5e1;flex-shrink:0;margin-top:4px;}
+  .trace-dot.done{background:#2563eb;}
+  .trace-bar{width:2px;flex:1;background:#e2e8f0;min-height:24px;}
+  .trace-time{font-size:12px;color:#94a3b8;}
+  .trace-text{font-size:13px;color:#475569;margin-top:1px;}
+
+  .quick-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px;}
+  .quick-item{background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:16px;text-align:center;
+    cursor:pointer;transition:all .15s;}
+  .quick-item:hover{border-color:#93c5fd;background:#eff6ff;}
+  .quick-icon{font-size:24px;}
+  .quick-text{font-size:13px;color:#475569;margin-top:8px;}
+
+  .notif-item{display:flex;gap:10px;padding:11px 6px;border-bottom:1px solid #f1f5f9;cursor:pointer;}
+  .notif-item:hover{background:#f8fafc;}
+  .notif-item.unread{background:#eff6ff;}
+  .notif-title{font-size:13px;color:#334155;font-weight:500;}
+  .notif-desc{font-size:12px;color:#94a3b8;margin-top:2px;}
+
+  .pager{display:flex;justify-content:flex-end;margin-top:14px;}
+  /* 个人中心弹窗头部 */
+  .pf-head{display:flex;align-items:center;gap:14px;}
+  .pf-avatar{width:52px;height:52px;flex:0 0 52px;border-radius:14px;display:grid;place-items:center;
+    font-size:22px;font-weight:700;color:#fff;background:linear-gradient(135deg,#2563eb,#1e40af);}
+  .pf-name{font-size:17px;font-weight:700;color:#0f172a;}
+  .pf-role{font-size:12.5px;color:#64748b;margin-top:3px;}
+
+  /* ================= 登录 / 注册 ================= */
+  .auth-mask{position:fixed;inset:0;z-index:3000;display:flex;align-items:center;justify-content:center;
+    background:linear-gradient(135deg,#e2e8f0 0%,#eef2f7 45%,#dbe4f0 100%);padding:24px;overflow:auto;}
+  .auth-wrap{width:100%;max-width:1040px;min-height:620px;display:flex;border-radius:20px;overflow:hidden;
+    box-shadow:0 30px 70px -20px rgba(15,23,42,.45),0 8px 24px rgba(15,23,42,.12);background:#fff;}
+  /* 左：品牌区 */
+  .auth-brand{position:relative;flex:1.05;padding:48px 44px;color:#fff;overflow:hidden;
+    background:linear-gradient(150deg,#0f172a 0%,#1e293b 38%,#1e3a8a 100%);display:flex;flex-direction:column;}
+  .auth-brand::before{content:'';position:absolute;width:420px;height:420px;right:-140px;top:-120px;border-radius:50%;
+    background:radial-gradient(circle,rgba(59,130,246,.34),transparent 68%);}
+  .auth-brand::after{content:'';position:absolute;width:300px;height:300px;left:-100px;bottom:-110px;border-radius:50%;
+    background:radial-gradient(circle,rgba(37,99,235,.22),transparent 70%);}
+  .ab-inner{position:relative;z-index:1;display:flex;flex-direction:column;height:100%;}
+  .ab-logo{display:flex;align-items:center;gap:12px;font-size:19px;font-weight:700;letter-spacing:.5px;}
+  .ab-logo-icon{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;font-size:21px;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(6px);}
+  .ab-title{margin-top:52px;font-size:30px;font-weight:800;line-height:1.35;letter-spacing:.5px;}
+  .ab-desc{margin-top:14px;font-size:14px;line-height:1.9;color:rgba(226,232,240,.78);max-width:330px;}
+  .ab-line{margin-top:26px;display:flex;flex-direction:column;gap:14px;}
+  .ab-item{display:flex;align-items:center;gap:11px;font-size:13.5px;color:rgba(226,232,240,.9);}
+  .ab-ico{width:30px;height:30px;flex:0 0 30px;border-radius:9px;display:grid;place-items:center;font-size:15px;
+    background:rgba(96,165,250,.18);border:1px solid rgba(147,197,253,.26);}
+  .ab-stats{margin-top:auto;padding-top:34px;display:flex;gap:32px;}
+  .ab-stat b{display:block;font-size:23px;font-weight:800;letter-spacing:.5px;}
+  .ab-stat span{font-size:12px;color:rgba(148,175,214,.85);}
+  .ab-foot{margin-top:18px;font-size:11.5px;color:rgba(148,163,184,.6);}
+  /* 右：表单区 */
+  .auth-panel{flex:1;padding:44px 46px;background:#fff;display:flex;flex-direction:column;}
+  .ap-head{margin-bottom:22px;}
+  .ap-title{font-size:24px;font-weight:800;color:#0f172a;letter-spacing:.5px;}
+  .ap-sub{margin-top:7px;font-size:13px;color:#64748b;}
+  .auth-panel .el-tabs__item{font-size:15px;font-weight:600;}
+  .auth-panel .el-tabs__nav-wrap::after{height:1px;background:#e2e8f0;}
+  .auth-panel .el-form-item{margin-bottom:19px;}
+  .auth-panel .el-input__wrapper{border-radius:9px;box-shadow:0 0 0 1px #e2e8f0 inset;padding:0 13px;height:44px;}
+  .auth-panel .el-input__wrapper.is-focus{box-shadow:0 0 0 1px #2563eb inset;}
+  .ap-btn{width:100%;height:45px;font-size:15px;font-weight:600;letter-spacing:3px;border-radius:9px;
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;margin-top:6px;}
+  .ap-btn:hover{background:linear-gradient(135deg,#3b74f0,#1e40af);}
+  .ap-row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 18px;}
+  .ap-demo{margin-top:20px;padding:13px 15px;border-radius:11px;background:#f8fafc;border:1px dashed #cbd5e1;}
+  .ap-demo-t{font-size:12px;color:#64748b;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
+  .ap-demo-btns{display:flex;gap:8px;flex-wrap:wrap;}
+  .ap-demo-b{font-size:12px;padding:6px 11px;border-radius:7px;cursor:pointer;background:#fff;
+    border:1px solid #dbe3ee;color:#334155;transition:all .16s;display:flex;align-items:center;gap:5px;}
+  .ap-demo-b:hover{border-color:#2563eb;color:#2563eb;background:#eff6ff;transform:translateY(-1px);}
+  .ap-foot{margin-top:auto;padding-top:18px;font-size:11.5px;color:#94a3b8;text-align:center;line-height:1.7;}
+  .ap-code-btn{width:112px;}
+  .ap-tip{font-size:12px;color:#94a3b8;margin-top:-8px;margin-bottom:14px;line-height:1.6;}
+  @media (max-width:900px){
+    .auth-wrap{max-width:460px;min-height:auto;}
+    .auth-brand{display:none;}
+    .auth-panel{padding:34px 28px;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    .ap-demo-b:hover{transform:none;}
+    .auth-wrap{transition:none;}
+  }
+</style>
+</head>
+<body>
+<div id="app" v-cloak>
+
+  <!-- ============ 登录 / 注册 ============ -->
+  <div class="auth-mask" v-if="!s.auth.logged" role="dialog" aria-label="账号登录">
+    <div class="auth-wrap">
+      <!-- 品牌区 -->
+      <div class="auth-brand">
+        <div class="ab-inner">
+          <div class="ab-logo">
+            <div class="ab-logo-icon">🚚</div>
+            <span>物流管理系统</span>
+          </div>
+          <div class="ab-title">让每一次寄递<br>都可追踪 · 可信赖</div>
+          <div class="ab-desc">覆盖揽收、干线、派送、签收全链路的数字化管理平台，支持客户自助、员工协同与管理员统一管控三种业务视角。</div>
+          <div class="ab-line">
+            <div class="ab-item"><span class="ab-ico">🛰️</span>全程轨迹可视化，节点状态实时同步</div>
+            <div class="ab-item"><span class="ab-ico">🏭</span>智能仓储调度，六仓容量动态预警</div>
+            <div class="ab-item"><span class="ab-ico">🔐</span>三权分立角色体系，数据按角色隔离</div>
+          </div>
+          <div class="ab-stats">
+            <div class="ab-stat"><b>1,286</b><span>服务网点</span></div>
+            <div class="ab-stat"><b>8.6万</b><span>日均运单</span></div>
+            <div class="ab-stat"><b>98.7%</b><span>准时送达率</span></div>
+          </div>
+          <div class="ab-foot">© 2026 物流管理系统 · 沪 ICP 备 2026000000 号</div>
+        </div>
+      </div>
+      <!-- 表单区 -->
+      <div class="auth-panel">
+        <el-tabs v-model="s.auth.tab">
+          <el-tab-pane label="账号登录" name="login">
+            <div class="ap-head">
+              <div class="ap-title">欢迎回来 👋</div>
+              <div class="ap-sub">登录后继续管理您的运单与包裹</div>
+            </div>
+            <el-form :model="s.auth.login" :rules="loginRules" ref="loginRef" @keyup.enter="submitLogin">
+              <el-form-item prop="account">
+                <el-input v-model="s.auth.login.account" size="large" placeholder="请输入用户名" clearable>
+                  <template #prefix>👤</template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="pwd">
+                <el-input v-model="s.auth.login.pwd" size="large" type="password" show-password
+                  placeholder="请输入密码" clearable>
+                  <template #prefix>🔒</template>
+                </el-input>
+              </el-form-item>
+              <div class="ap-row">
+                <el-checkbox v-model="s.auth.remember">记住登录状态</el-checkbox>
+                <el-link type="primary" :underline="false" style="font-size:13px" @click="forgotPwd">忘记密码？</el-link>
+              </div>
+              <el-button class="ap-btn" type="primary" size="large" :loading="s.auth.submitting" @click="submitLogin">
+                登 录
+              </el-button>
+            </el-form>
+            <div class="ap-demo">
+              <div class="ap-demo-t">💡 演示账号（点击一键填入，密码统一 123456）</div>
+              <div class="ap-demo-btns">
+                <div class="ap-demo-b" @click="fillDemo('customer')">👤 客户 · 张三</div>
+                <div class="ap-demo-b" @click="fillDemo('staff')">🧑‍✈️ 物流员工 · 李师傅</div>
+                <div class="ap-demo-b" @click="fillDemo('admin')">🛠️ 管理员 · 王主任</div>
+              </div>
+            </div>
+          </el-tab-pane>
+
+          <el-tab-pane label="注册账号" name="reg">
+            <div class="ap-head">
+              <div class="ap-title">创建账号 ✨</div>
+              <div class="ap-sub">只需设置用户名和密码，10 秒完成注册</div>
+            </div>
+            <el-form :model="s.auth.reg" :rules="regRules" ref="regRef" @keyup.enter="submitReg">
+              <el-form-item prop="account">
+                <el-input v-model="s.auth.reg.account" size="large" placeholder="设置用户名（4-16 位字母、数字或下划线）" clearable>
+                  <template #prefix>👤</template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="pwd">
+                <el-input v-model="s.auth.reg.pwd" size="large" type="password" show-password
+                  placeholder="设置密码（至少 6 位）" clearable>
+                  <template #prefix>🔒</template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="pwd2">
+                <el-input v-model="s.auth.reg.pwd2" size="large" type="password" show-password
+                  placeholder="请再次输入密码" clearable>
+                  <template #prefix>✅</template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="role">
+                <el-radio-group v-model="s.auth.reg.role" style="width:100%">
+                  <el-radio-button value="customer">我是客户</el-radio-button>
+                  <el-radio-button value="staff">我是物流员工</el-radio-button>
+                </el-radio-group>
+              </el-form-item>
+              <el-form-item prop="agree">
+                <el-checkbox v-model="s.auth.reg.agree">我已阅读并同意 <el-link type="primary" :underline="false">《用户服务协议》</el-link> 与 <el-link type="primary" :underline="false">《隐私政策》</el-link></el-checkbox>
+              </el-form-item>
+              <div class="ap-tip" v-if="CONFIG.USE_MOCK">演示环境注册的账号仅保存在当前页面内存中，刷新后失效；接入后端后会自动写入数据库。</div>
+              <el-button class="ap-btn" type="primary" size="large" :loading="s.auth.submitting" @click="submitReg">
+                注 册 并 登 录
+              </el-button>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+        <div class="ap-foot">
+          登录即表示您已阅读并同意平台服务条款<br>
+          {{ CONFIG.USE_MOCK ? '当前为演示环境，数据源：内置模拟数据' : '当前数据源：后端接口 ' + CONFIG.BASE }}
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 顶部导航栏 -->
+  <div class="topbar">
+    <div class="tag-mock" v-if="CONFIG.USE_MOCK" title="当前使用内置演示数据">MOCK 数据</div>
+    <div class="logo">
+      <div class="logo-icon">🚚</div>
+      <div class="logo-name">物流管理系统</div>
+    </div>
+    <div class="top-search">
+      <el-input v-model="s.searchKw" placeholder="搜索订单、包裹、用户..." clearable
+        @keyup.enter="goSearch" @input="onSearchInput">
+        <template #prefix>🔍</template>
+      </el-input>
+      <div class="search-hits" v-if="s.searchKw && searchHits.length">
+        <div class="search-hit" v-for="o in searchHits" :key="o.no" @click="trackOrder(o)">
+          <span>{{ o.no }} · {{ o.goods }}</span>
+          <span class="sub">{{ stText(o.status) }} · {{ o.dest }}</span>
+        </div>
+      </div>
+    </div>
+    <div class="top-right">
+      <el-dropdown @command="switchRole" trigger="click">
+        <span class="role-tag">{{ roleText }} ▾</span>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="customer" :class="{on: s.role==='customer'}">👤 客户</el-dropdown-item>
+            <el-dropdown-item command="staff" :class="{on: s.role==='staff'}">🧑‍✈️ 物流员工</el-dropdown-item>
+            <el-dropdown-item command="admin" :class="{on: s.role==='admin'}">🛠️ 系统管理员</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+      <el-popover placement="bottom-end" width="330" trigger="click">
+        <template #reference><div class="bell">🔔<span class="dot" v-if="unreadCount"></span></div></template>
+        <div class="notif-item" v-for="n in s.notices" :key="n.id" :class="{unread:!n.read}" @click="readNotice(n)">
+          <span style="font-size:18px">{{ n.icon }}</span>
+          <div>
+            <div class="notif-title">{{ n.title }}</div>
+            <div class="notif-desc">{{ n.desc }} · {{ n.time }}</div>
+          </div>
+        </div>
+      </el-popover>
+      <el-dropdown trigger="click" @command="onUserCmd">
+        <div class="user-box">
+          <div class="avatar">{{ s.auth.user.name ? s.auth.user.name.charAt(0) : '游' }}</div>
+          <span class="user-name">{{ s.auth.user.name }}</span>
+          <span class="caret">▾</span>
+        </div>
+        <template #dropdown>
+          <el-dropdown-menu>
+            <el-dropdown-item command="profile">👤 个人中心</el-dropdown-item>
+            <el-dropdown-item command="switch">🔄 切换账号</el-dropdown-item>
+            <el-dropdown-item command="logout" divided>⏻ 退出登录</el-dropdown-item>
+          </el-dropdown-menu>
+        </template>
+      </el-dropdown>
+    </div>
+  </div>
+
+  <!-- 侧边栏 -->
+  <div class="sidebar" :class="{collapsed: s.collapsed}">
+    <div class="menu">
+      <div class="m-item" v-for="m in menus" :key="m.k" :class="{active: s.active===m.k}"
+        @click="go(m.k)" :title="m.t">
+        <span class="m-icon">{{ m.i }}</span>
+        <span class="m-label">{{ m.t }}</span>
+      </div>
+    </div>
+    <div class="sidebar-bottom">
+      <button class="collapse-btn" @click="s.collapsed=!s.collapsed" :title="s.collapsed?'展开':'收起'">
+        {{ s.collapsed ? '»' : '«' }}
+      </button>
+    </div>
+  </div>
+
+  <!-- 主内容 -->
+  <div class="main" :class="{expanded: s.collapsed}">
+    <div class="breadcrumb">
+      <span>首页</span><span>›</span>
+      <span v-if="s.crumbParent">{{ s.crumbParent }}</span><span v-if="s.crumbParent">›</span>
+      <span class="cur">{{ pageTitle }}</span>
+    </div>
+    <div class="page-title">{{ pageTitle }}</div>
+
+    <!-- ============ 客户：首页 ============ -->
+    <template v-if="s.active==='home' && s.role==='customer'">
+      <div class="stat-grid">
+        <div class="stat-card clickable" @click="go('orders')">
+          <div class="stat-label">累计寄件</div>
+          <div class="stat-value">{{ s.stats.total || 0 }}</div>
+          <div class="stat-sub">近半年订单总数</div>
+        </div>
+        <div class="stat-card clickable" @click="go('track')">
+          <div class="stat-label">在途包裹</div>
+          <div class="stat-value">{{ s.stats.inTransit || 0 }}</div>
+          <div class="stat-sub">运输中 / 派送中</div>
+        </div>
+        <div class="stat-card clickable" @click="go('orders')">
+          <div class="stat-label">已签收</div>
+          <div class="stat-value">{{ s.stats.delivered || 0 }}</div>
+          <div class="stat-sub">感谢您的信任</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">累计运费</div>
+          <div class="stat-value">¥{{ (s.stats.revenue||0).toFixed(0) }}</div>
+          <div class="stat-sub">金牌客户 · 享 92 折</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">待我签收
+          <el-button size="small" text type="primary" @click="go('track')">全部 ›</el-button>
+        </div>
+        <el-table :data="s.waitSignList" size="default" v-loading="s.loading">
+          <el-table-column label="运单号" min-width="170">
+            <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
+          </el-table-column>
+          <el-table-column label="物品" prop="goods" min-width="130" />
+          <el-table-column label="预计送达" width="150">
+            <template #default="{row}"><span class="cell-sub">{{ fmt(row.eta) }}</span></template>
+          </el-table-column>
+          <el-table-column label="操作" width="110">
+            <template #default="{row}">
+              <el-button size="small" type="primary" @click="trackOrder(row)">去签收</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div class="card">
+        <div class="card-title">快捷入口</div>
+        <div class="quick-grid">
+          <div class="quick-item" @click="go('send')"><div class="quick-icon">📦</div><div class="quick-text">立即寄件</div></div>
+          <div class="quick-item" @click="go('track')"><div class="quick-icon">🔍</div><div class="quick-text">包裹追踪</div></div>
+          <div class="quick-item" @click="go('orders')"><div class="quick-icon">📋</div><div class="quick-text">我的订单</div></div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ============ 客户：寄件 ============ -->
+    <template v-if="s.active==='send' && s.role==='customer'">
+      <div class="card" style="max-width:640px">
+        <div class="card-title">在线下单</div>
+        <el-form label-width="90px">
+          <el-form-item label="收件人"><el-input v-model="s.sendForm.to" placeholder="收件人姓名" /></el-form-item>
+          <el-form-item label="收件地址"><el-input v-model="s.sendForm.dest" placeholder="省市区 + 详细地址" /></el-form-item>
+          <el-form-item label="物品类型">
+            <el-select v-model="s.sendForm.goods" style="width:100%">
+              <el-option v-for="g in goodsList" :key="g" :label="g" :value="g" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="重量">
+            <el-input-number v-model="s.sendForm.weight" :min="0.5" :max="50" :step="0.5" /> kg
+          </el-form-item>
+          <el-form-item label="预估运费">
+            <span style="font-size:20px;font-weight:700;color:#2563eb">¥{{ sendPrice.toFixed(2) }}</span>
+            <span style="font-size:12px;color:#94a3b8;margin-left:8px">首重 1kg ¥12，续重 ¥4/kg</span>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="submitSend">提交订单</el-button>
+            <el-button @click="resetSend">重置</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </template>
+
+    <!-- ============ 客户：包裹追踪（右栏含签收确认） ============ -->
+    <template v-if="s.active==='track' && s.role==='customer'">
+      <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
+        <div class="card">
+          <div class="card-title">物流轨迹</div>
+          <el-select v-model="s.trackSel" style="width:100%;margin-bottom:18px"
+            placeholder="选择运单号">
+            <el-option v-for="o in orders" :key="o.no" :value="o.no"
+              :label="o.no + ' · ' + o.goods + ' · ' + stText(o.status)" />
+          </el-select>
+          <div v-if="s.trackOrder">
+            <div style="display:flex;justify-content:space-between;margin-bottom:16px">
+              <div>
+                <div style="font-size:16px;font-weight:600">{{ s.trackOrder.no }}</div>
+                <div class="cell-sub">{{ s.trackOrder.goods }} → {{ s.trackOrder.dest }}</div>
+              </div>
+              <el-tag :type="stTag(s.trackOrder.status)">{{ stText(s.trackOrder.status) }}</el-tag>
+            </div>
+            <div style="margin-bottom:14px" v-if="s.trackOrder.status==='delivering'">
+              <el-alert type="warning" :closable="false" show-icon
+                title="包裹正在派送，请留意签收码" :description="'签收码：' + s.trackOrder.signCode" />
+            </div>
+            <div v-for="(t,i) in s.trackOrder.traces" :key="i" class="trace-item">
+              <div class="trace-line">
+                <div class="trace-dot" :class="{done: t.done}"></div>
+                <div class="trace-bar" v-if="i < s.trackOrder.traces.length-1"></div>
+              </div>
+              <div style="padding-bottom:16px">
+                <div class="trace-text" :style="t.done?'color:#0f172a;font-weight:500':''">{{ t.txt }}</div>
+                <div class="trace-time">{{ fmt(t.t) }}</div>
+              </div>
+            </div>
+          </div>
+          <el-empty v-else description="请选择运单查看轨迹" />
+        </div>
+        <div class="card">
+          <div class="card-title">签收确认</div>
+          <el-form label-width="70px">
+            <el-form-item label="运单">
+              <el-select v-model="s.signForm.no" style="width:100%" placeholder="选择待签收运单">
+                <el-option v-for="o in s.signableList" :key="o.no" :label="o.no + ' · ' + o.goods" :value="o.no" />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="签收码">
+              <el-input v-model="s.signForm.code" placeholder="快递员提供的签收码" maxlength="4" />
+            </el-form-item>
+            <el-form-item label="签收人">
+              <el-radio-group v-model="s.signForm.by">
+                <el-radio value="本人">本人</el-radio>
+                <el-radio value="代收点">代收点</el-radio>
+                <el-radio value="他人">他人</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item>
+              <el-button type="primary" style="width:100%" @click="confirmSign">确认签收</el-button>
+            </el-form-item>
+          </el-form>
+          <div class="cell-sub" style="margin-top:4px">签收成功后可直接对本次服务进行评价。</div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ============ 客户：我的订单（含意见反馈） ============ -->
+    <template v-if="s.active==='orders' && s.role==='customer'">
+      <div class="card">
+        <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <el-input v-model="s.orderKw" placeholder="搜索运单号 / 物品" style="width:240px" clearable>
+            <template #prefix>🔍</template>
+          </el-input>
+          <el-select v-model="s.orderFilter" style="width:150px" placeholder="全部状态" clearable>
+            <el-option v-for="st in statusList" :key="st.v" :label="st.t" :value="st.v" />
+          </el-select>
+          <el-button @click="resetOrderFilter">重置</el-button>
+          <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">
+            共 {{ s.orderTotal }} 单 · 已反馈 {{ s.stats.fbCount || 0 }} 条
+          </span>
+        </div>
+        <el-table :data="s.orderList" @row-click="trackOrder" style="cursor:pointer" v-loading="s.loading">
+          <el-table-column label="运单号" min-width="175">
+            <template #default="{row}">
+              <div class="cell-main">{{ row.no }}</div>
+              <div class="cell-sub">下单 {{ fmt(row.time) }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="物品 / 收件地" min-width="210">
+            <template #default="{row}">
+              <div class="cell-main">{{ row.goods }}</div>
+              <div class="cell-sub">{{ row.dest }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="110">
+            <template #default="{row}">
+              <el-tag :type="stTag(row.status)" size="small">{{ stText(row.status) }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="运费" width="100">
+            <template #default="{row}"><span class="cell-fee">¥{{ row.fee.toFixed(2) }}</span></template>
+          </el-table-column>
+          <el-table-column label="意见反馈" width="120">
+            <template #default="{row}">
+              <el-tag v-if="s.fbMap[row.no]" type="success" size="small">{{ s.fbMap[row.no].type }}</el-tag>
+              <span v-else class="cell-sub">未反馈</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" fixed="right">
+            <template #default="{row}">
+              <el-button link type="primary" @click.stop="trackOrder(row)">追踪</el-button>
+              <el-button v-if="!s.fbMap[row.no]" link type="primary" @click.stop="openFeedback(row)">写反馈</el-button>
+              <el-button v-else link @click.stop="openFeedback(row, true)">查看反馈</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="pager">
+          <el-pagination background layout="total, sizes, prev, pager, next" :total="s.orderTotal"
+            v-model:current-page="s.orderPage" :page-size="s.orderSize" :page-sizes="[10,20,50]" />
+        </div>
+      </div>
+    </template>
+
+    <!-- ============ 员工：工作台 ============ -->
+    <template v-if="s.active==='work' && s.role==='staff'">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">今日待办</div><div class="stat-value">{{ s.taskTotal }}</div><div class="stat-sub">揽收 + 派送任务</div></div>
+        <div class="stat-card"><div class="stat-label">已完成</div><div class="stat-value">{{ s.stats.tasksDone || 0 }}</div><div class="stat-sub">近 7 天累计</div></div>
+        <div class="stat-card"><div class="stat-label">凭证待上传</div><div class="stat-value">{{ s.stats.noVoucher || 0 }}</div><div class="stat-sub">签收后需回传凭证</div></div>
+        <div class="stat-card"><div class="stat-label">本月派件</div><div class="stat-value">{{ s.stats.monthDeliver || 0 }}</div><div class="stat-sub">完成率 96.2%</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">待办任务</div>
+        <el-table :data="s.taskList" v-loading="s.loading">
+          <el-table-column label="运单号" min-width="170">
+            <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
+          </el-table-column>
+          <el-table-column label="任务类型" width="100">
+            <template #default="{row}"><el-tag size="small" :type="row.type==='上门揽收'?'warning':'primary'">{{ row.type }}</el-tag></template>
+          </el-table-column>
+          <el-table-column label="地址" prop="addr" min-width="180" />
+          <el-table-column label="时间" width="150">
+            <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
+          </el-table-column>
+          <el-table-column label="状态" width="90">
+            <template #default="{row}">
+              <el-tag size="small" :type="row.status==='todo'?'info':'success'">{{ row.status==='todo'?'待处理':'已完成' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="200" fixed="right">
+            <template #default="{row}">
+              <template v-if="row.status==='todo'">
+                <el-button size="small" type="primary" @click="openStatus(row)">状态更新</el-button>
+                <el-button size="small" @click="openVoucher(row)">上传凭证</el-button>
+              </template>
+              <span v-else class="cell-sub">已完成{{ row.voucher ? ' · 有凭证' : '' }}</span>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="pager">
+          <el-pagination background layout="total, prev, pager, next" :total="s.taskTotal"
+            v-model:current-page="s.taskPage" :page-size="10" />
+        </div>
+      </div>
+    </template>
+
+    <!-- ============ 员工：状态更新（隐藏页） ============ -->
+    <template v-if="s.active==='status' && s.role==='staff'">
+      <div class="card" style="max-width:560px">
+        <el-button text @click="go('work')">‹ 返回工作台</el-button>
+        <div class="card-title" style="margin-top:8px">更新运单状态
+          <el-tag v-if="s.statusForm.task" size="small">{{ s.statusForm.task.no }}</el-tag>
+        </div>
+        <el-form label-width="90px">
+          <el-form-item label="最新状态">
+            <el-select v-model="s.statusForm.status" style="width:100%">
+              <el-option label="已取件，运输中" value="transit" />
+              <el-option label="派送中" value="delivering" />
+              <el-option label="已签收" value="delivered" />
+              <el-option label="异常上报" value="exception" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="备注"><el-input v-model="s.statusForm.note" type="textarea" :rows="3" placeholder="选填" /></el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="saveStatus">保存并完成任务</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </template>
+
+    <!-- ============ 员工：凭证上传（隐藏页） ============ -->
+    <template v-if="s.active==='voucher' && s.role==='staff'">
+      <div class="card" style="max-width:560px">
+        <el-button text @click="go('work')">‹ 返回工作台</el-button>
+        <div class="card-title" style="margin-top:8px">上传签收凭证
+          <el-tag v-if="s.voucherTask" size="small">{{ s.voucherTask.no }}</el-tag>
+        </div>
+        <el-form label-width="90px">
+          <el-form-item label="凭证照片">
+            <el-upload drag :auto-upload="false" :limit="3" list-type="picture"
+              :on-change="onVoucherFile" :file-list="s.voucherFiles" accept="image/*">
+              <div style="padding:14px 30px">📥 将图片拖到此处，或<em>点击上传</em></div>
+            </el-upload>
+          </el-form-item>
+          <el-form-item label="签收说明"><el-input v-model="s.voucherNote" type="textarea" :rows="2" placeholder="如：已由本人签收，外包装完好" /></el-form-item>
+          <el-form-item>
+            <el-button type="primary" :disabled="!s.voucherFiles.length" @click="saveVoucher">提交凭证</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+    </template>
+
+    <!-- ============ 员工：库存管理 ============ -->
+    <template v-if="s.active==='inventory' && s.role==='staff'">
+      <div class="card">
+        <el-tabs v-model="s.invTab">
+          <el-tab-pane label="入库" name="in">
+            <div style="margin-bottom:12px">
+              <el-button type="primary" size="small" @click="s.invForm={type:'in',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">+ 新建入库</el-button>
+            </div>
+            <el-table :data="invIn" v-loading="s.loading">
+              <el-table-column label="单号" prop="no" min-width="140" />
+              <el-table-column label="物品" prop="goods" min-width="140" />
+              <el-table-column label="数量" prop="qty" width="80" />
+              <el-table-column label="仓库" prop="wh" width="130" />
+              <el-table-column label="操作员" prop="op" width="100" />
+              <el-table-column label="时间" width="150">
+                <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+          <el-tab-pane label="出库" name="out">
+            <div style="margin-bottom:12px">
+              <el-button type="primary" size="small" @click="s.invForm={type:'out',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">+ 新建出库</el-button>
+            </div>
+            <el-table :data="invOut" v-loading="s.loading">
+              <el-table-column label="单号" prop="no" min-width="140" />
+              <el-table-column label="物品" prop="goods" min-width="140" />
+              <el-table-column label="数量" prop="qty" width="80" />
+              <el-table-column label="仓库" prop="wh" width="130" />
+              <el-table-column label="操作员" prop="op" width="100" />
+              <el-table-column label="时间" width="150">
+                <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
+              </el-table-column>
+            </el-table>
+          </el-tab-pane>
+        </el-tabs>
+      </div>
+    </template>
+
+    <!-- ============ 员工：库存看板 ============ -->
+    <template v-if="s.active==='board' && s.role==='staff'">
+      <div class="card">
+        <div class="card-title">仓库容量概览</div>
+        <div class="cap-row" v-for="w in s.warehouses" :key="w.name">
+          <span class="cap-name">{{ w.name }}</span>
+          <div class="cap-bar"><div class="cap-fill" :style="{width:(w.used/w.cap*100).toFixed(1)+'%',background: w.used/w.cap>0.85?'#ef4444':'#2563eb'}"></div></div>
+          <span class="cap-num">{{ w.used }} / {{ w.cap }} 托</span>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">近 7 天出入库量</div>
+        <div class="chart">
+          <div class="bar-col" v-for="d in s.weekList" :key="d.day">
+            <span class="bar-num">{{ d.n }}</span>
+            <div class="bar" :style="{height:(d.n/weekMax*140)+'px'}"></div>
+            <span class="bar-day">{{ d.day }}</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ============ 管理员：仪表盘 ============ -->
+    <template v-if="s.active==='dash' && s.role==='admin'">
+      <div class="stat-grid">
+        <div class="stat-card"><div class="stat-label">累计运单</div><div class="stat-value">{{ s.stats.total || 0 }}</div><div class="stat-sub">近 180 天</div></div>
+        <div class="stat-card"><div class="stat-label">已签收</div><div class="stat-value">{{ s.stats.delivered || 0 }}</div><div class="stat-sub">签收率 {{ s.stats.total ? (s.stats.delivered/s.stats.total*100).toFixed(1) : 0 }}%</div></div>
+        <div class="stat-card"><div class="stat-label">累计营收</div><div class="stat-value">¥{{ (s.stats.revenue||0).toFixed(0) }}</div><div class="stat-sub">不含已取消运单</div></div>
+        <div class="stat-card"><div class="stat-label">异常运单</div><div class="stat-value">{{ s.stats.exception || 0 }}</div><div class="stat-sub">待处理理赔</div></div>
+      </div>
+      <div class="card">
+        <div class="card-title">近 7 天订单量</div>
+        <div class="chart">
+          <div class="bar-col" v-for="d in s.weekList" :key="d.day">
+            <span class="bar-num">{{ d.n }}</span>
+            <div class="bar" :style="{height:(d.n/weekMax*140)+'px'}"></div>
+            <span class="bar-day">{{ d.day }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">最新运单</div>
+        <el-table :data="s.latestList" v-loading="s.loading">
+          <el-table-column label="运单号" min-width="170">
+            <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
+          </el-table-column>
+          <el-table-column label="物品 / 收件地" min-width="200">
+            <template #default="{row}"><span class="cell-main">{{ row.goods }}</span><div class="cell-sub">{{ row.dest }}</div></template>
+          </el-table-column>
+          <el-table-column label="状态" width="110">
+            <template #default="{row}"><el-tag size="small" :type="stTag(row.status)">{{ stText(row.status) }}</el-tag></template>
+          </el-table-column>
+          <el-table-column label="运费" width="100">
+            <template #default="{row}"><span class="cell-fee">¥{{ row.fee.toFixed(2) }}</span></template>
+          </el-table-column>
+        </el-table>
+      </div>
+    </template>
+
+    <!-- ============ 管理员：用户管理（角色分配并入列表） ============ -->
+    <template v-if="s.active==='users' && s.role==='admin'">
+      <div class="card">
+        <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
+          <el-input v-model="s.userKw" placeholder="搜索姓名 / 账号" style="width:220px" clearable />
+          <el-select v-model="s.userRoleFilter" style="width:150px" placeholder="全部角色" clearable>
+            <el-option label="客户" value="客户" /><el-option label="物流员工" value="物流员工" /><el-option label="系统管理员" value="系统管理员" />
+          </el-select>
+          <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">共 {{ s.userTotal }} 位用户</span>
+        </div>
+        <el-table :data="s.userList" v-loading="s.loading">
+          <el-table-column label="用户" min-width="160">
+            <template #default="{row}">
+              <div class="cell-main">{{ row.name }}</div>
+              <div class="cell-sub">{{ row.account }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column label="角色分配" width="160">
+            <template #default="{row}">
+              <el-select v-model="row.role" size="small" @change="onRoleChange(row)">
+                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" />
+              </el-select>
+            </template>
+          </el-table-column>
+          <el-table-column label="状态" width="100">
+            <template #default="{row}">
+              <el-tag size="small" :type="row.active?'success':'danger'">{{ row.active?'正常':'已禁用' }}</el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="运单数" prop="orderCount" width="90" />
+          <el-table-column label="注册时间" width="150">
+            <template #default="{row}"><span class="cell-sub">{{ fmtDate(row.created) }}</span></template>
+          </el-table-column>
+          <el-table-column label="操作" width="120" fixed="right">
+            <template #default="{row}">
+              <el-button link :type="row.active?'danger':'primary'" size="small" @click="row.active=!row.active">
+                {{ row.active?'禁用':'启用' }}
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+        <div class="pager">
+          <el-pagination background layout="total, prev, pager, next" :total="s.userTotal"
+            v-model:current-page="s.userPage" :page-size="10" />
+        </div>
+      </div>
+      <div class="card">
+        <el-collapse>
+          <el-collapse-item title="批量角色分配" name="batch">
+            <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+              <el-select v-model="s.batchRole" placeholder="选择角色" style="width:160px">
+                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" />
+              </el-select>
+              <el-button type="primary" :disabled="!s.batchRole" @click="batchAssign">应用到全部客户筛选结果</el-button>
+            </div>
+          </el-collapse-item>
+          <el-collapse-item title="角色权限矩阵" name="matrix">
+            <el-table :data="permMatrix" size="small">
+              <el-table-column prop="mod" label="功能模块" min-width="140" />
+              <el-table-column prop="c" label="客户" width="100"><template #default="{row}"><span>{{ row.c?'✅':'—' }}</span></template></el-table-column>
+              <el-table-column prop="s" label="物流员工" width="100"><template #default="{row}"><span>{{ row.s?'✅':'—' }}</span></template></el-table-column>
+              <el-table-column prop="a" label="系统管理员" width="110"><template #default="{row}"><span>{{ row.a?'✅':'—' }}</span></template></el-table-column>
+            </el-table>
+          </el-collapse-item>
+        </el-collapse>
+      </div>
+    </template>
+
+    <!-- ============ 管理员：报表中心 ============ -->
+    <template v-if="s.active==='reports' && s.role==='admin'">
+      <div class="card">
+        <div class="card-title">月度运营报表</div>
+        <el-table :data="s.monthList" show-summary :summary-method="sumReport" v-loading="s.loading">
+          <el-table-column prop="month" label="月份" width="120" />
+          <el-table-column prop="count" label="运单量" width="110" />
+          <el-table-column prop="delivered" label="已签收" width="110" />
+          <el-table-column prop="exception" label="异常件" width="100" />
+          <el-table-column prop="fee" label="营收 (¥)" min-width="120">
+            <template #default="{row}">{{ row.fee.toFixed(2) }}</template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div class="card">
+        <div class="card-title">月度运单量趋势</div>
+        <div class="chart">
+          <div class="bar-col" v-for="m in s.monthList" :key="m.month">
+            <span class="bar-num">{{ m.count }}</span>
+            <div class="bar" :style="{height:(m.count/monthMax*140)+'px'}"></div>
+            <span class="bar-day">{{ m.month.slice(5) }}月</span>
+          </div>
+        </div>
+      </div>
+    </template>
+
+    <!-- ============ 管理员：系统设置 ============ -->
+    <template v-if="s.active==='settings' && s.role==='admin'">
+      <div class="card" style="max-width:640px">
+        <el-tabs v-model="s.setTab">
+          <el-tab-pane label="基础设置" name="base">
+            <el-form label-width="110px">
+              <el-form-item label="系统名称"><el-input v-model="s.setForm.name" /></el-form-item>
+              <el-form-item label="客服电话"><el-input v-model="s.setForm.phone" /></el-form-item>
+              <el-form-item label="公告"><el-input v-model="s.setForm.notice" type="textarea" :rows="2" /></el-form-item>
+            </el-form>
+          </el-tab-pane>
+          <el-tab-pane label="运费规则" name="fee">
+            <el-form label-width="110px">
+              <el-form-item label="首重 (kg)"><el-input-number v-model="s.setForm.first" :min="1" /></el-form-item>
+              <el-form-item label="首重费 (¥)"><el-input-number v-model="s.setForm.firstFee" :min="1" /></el-form-item>
+              <el-form-item label="续重费/kg (¥)"><el-input-number v-model="s.setForm.addFee" :min="1" /></el-form-item>
+            </el-form>
+          </el-tab-pane>
+          <el-tab-pane label="通知设置" name="notice">
+            <el-form label-width="110px">
+              <el-form-item label="签收通知"><el-switch v-model="s.setForm.signNtf" /></el-form-item>
+              <el-form-item label="异常通知"><el-switch v-model="s.setForm.excNtf" /></el-form-item>
+              <el-form-item label="营销推送"><el-switch v-model="s.setForm.mktNtf" /></el-form-item>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+        <el-button type="primary" @click="ElMessage.success('设置已保存')">保存设置</el-button>
+      </div>
+    </template>
+  </div>
+
+  <!-- 个人中心弹窗 -->
+  <el-dialog v-model="s.auth.profileVisible" title="👤 个人中心" width="420px">
+    <div class="pf-head">
+      <div class="pf-avatar">{{ s.auth.user.name ? s.auth.user.name.charAt(0) : '游' }}</div>
+      <div>
+        <div class="pf-name">{{ s.auth.user.name }}</div>
+        <div class="pf-role">{{ roleText }}</div>
+      </div>
+    </div>
+    <el-descriptions :column="1" border style="margin-top:18px">
+      <el-descriptions-item label="登录账号">{{ s.auth.user.account }}</el-descriptions-item>
+      <el-descriptions-item label="账号角色">{{ roleText }}</el-descriptions-item>
+      <el-descriptions-item label="登录时间">{{ s.auth.user.loginAt }}</el-descriptions-item>
+      <el-descriptions-item label="令牌状态">
+        <el-tag size="small" :type="CONFIG.TOKEN ? 'success' : 'info'">
+          {{ CONFIG.TOKEN ? '有效 · ' + String(CONFIG.TOKEN).slice(0, 14) + '…' : '未获取' }}
+        </el-tag>
+      </el-descriptions-item>
+    </el-descriptions>
+    <template #footer>
+      <el-button @click="s.auth.profileVisible = false">关 闭</el-button>
+      <el-button type="danger" plain @click="logout">退出登录</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- 意见反馈弹窗 -->
+  <el-dialog v-model="s.fbVisible" :title="s.fbReadonly ? '查看反馈' : '意见反馈 · ' + s.fbForm.no" width="460px">
+    <div v-if="!s.fbReadonly">
+      <el-form label-width="70px">
+        <el-form-item label="类型">
+          <el-radio-group v-model="s.fbForm.type">
+            <el-radio v-for="t in s.fbTypes" :key="t" :value="t">{{ t }}</el-radio>
+          </el-radio-group>
+        </el-form-item>
+        <el-form-item label="内容">
+          <el-input v-model="s.fbForm.content" type="textarea" :rows="4"
+            placeholder="请描述您的问题或建议（每个运单仅可提交一条反馈）" />
+        </el-form-item>
+      </el-form>
+    </div>
+    <el-descriptions v-else :column="1" border>
+      <el-descriptions-item label="反馈类型">{{ s.fbForm.type }}</el-descriptions-item>
+      <el-descriptions-item label="反馈内容">{{ s.fbForm.content }}</el-descriptions-item>
+      <el-descriptions-item label="提交时间">{{ s.fbForm.time }}</el-descriptions-item>
+      <el-descriptions-item label="客服回复">{{ s.fbForm.reply || '待客服处理…' }}</el-descriptions-item>
+    </el-descriptions>
+    <template #footer>
+      <template v-if="!s.fbReadonly">
+        <el-button @click="s.fbVisible=false">取消</el-button>
+        <el-button type="primary" @click="saveFeedback">提交反馈</el-button>
+      </template>
+      <el-button v-else type="primary" @click="s.fbVisible=false">关闭</el-button>
+    </template>
+  </el-dialog>
+
+  <!-- 入库/出库弹窗 -->
+  <el-dialog v-model="s.invVisible" :title="s.invForm.type==='in'?'新建入库':'新建出库'" width="420px">
+    <el-form label-width="70px">
+      <el-form-item label="物品"><el-input v-model="s.invForm.goods" placeholder="物品名称" /></el-form-item>
+      <el-form-item label="数量"><el-input-number v-model="s.invForm.qty" :min="1" :max="999" /></el-form-item>
+      <el-form-item label="仓库">
+        <el-select v-model="s.invForm.wh" style="width:100%">
+          <el-option v-for="w in s.warehouses" :key="w.name" :label="w.name" :value="w.name" />
+        </el-select>
+      </el-form-item>
+    </el-form>
+    <template #footer>
+      <el-button @click="s.invVisible=false">取消</el-button>
+      <el-button type="primary" @click="addInv">确认{{ s.invForm.type==='in'?'入库':'出库' }}</el-button>
+    </template>
+  </el-dialog>
+</div>
+
+<script>
+const { createApp, reactive, computed, ref, watch, onMounted } = Vue;
+const { ElMessage, ElMessageBox } = ElementPlus;
+
+/* ============ 伪随机（固定种子，保证每次打开数据一致） ============ */
+function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;}}
+const rnd = mulberry32(20261025);
+const pick = arr => arr[Math.floor(rnd()*arr.length)];
+const ri = (min,max) => Math.floor(min + rnd()*(max-min+1));
+
+const goodsList = ['日用百货','电子配件','服装鞋帽','食品生鲜','图书文具','母婴用品','美妆护肤','数码产品','家居用品','运动器材'];
+const cityList = ['上海市浦东新区','北京市朝阳区','广州市天河区','深圳市南山区','杭州市西湖区','成都市锦江区','武汉市洪山区','南京市鼓楼区','重庆市渝中区','西安市雁塔区','长沙市岳麓区','青岛市市南区'];
+const nameList = ['王伟','李娜','张敏','刘强','陈静','杨洋','赵磊','黄丽','周杰','吴霞','徐明','孙婷','朱婷','胡军','郭欣','何平','高雅','林峰'];
+const whList = ['华东一号仓','华东二号仓','华南仓','华北仓','西南仓','华中仓'];
+
+const stTextMap = {pending:'待揽收',transit:'运输中',delivering:'派送中',delivered:'已签收',exception:'异常',cancelled:'已取消'};
+const stTagMap = {pending:'warning',transit:'primary',delivering:'warning',delivered:'success',exception:'danger',cancelled:'info'};
+
+const NOW = new Date(2026,9,25,14,30).getTime();
+const DAY = 86400000;
+
+/* ============ 生成半年运单数据 ============ */
+let seq = 1000;
+function genOrder(){
+  const daysAgo = Math.floor(rnd()*rnd()*180);
+  const time = NOW - daysAgo*DAY - ri(0,20)*3600000;
+  const d = new Date(time);
+  const no = 'SF' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + (++seq);
+  const r = rnd();
+  let status;
+  if(daysAgo <= 2) status = r<0.25?'pending':r<0.55?'transit':r<0.85?'delivering':'delivered';
+  else if(daysAgo <= 7) status = r<0.1?'pending':r<0.3?'transit':r<0.45?'delivering':r<0.92?'delivered':'exception';
+  else status = r<0.8?'delivered':r<0.88?'exception':r<0.95?'cancelled':'delivered';
+  const fee = +(ri(12,120) + rnd()).toFixed(2);
+  const o = { no, goods: pick(goodsList), dest: pick(cityList), receiver: pick(nameList),
+    fee, status, time, eta: time + ri(2,5)*DAY, signCode: String(ri(1000,9999)), traces: [] };
+  // 轨迹
+  const tr = [];
+  tr.push({t: o.time, txt: '寄件成功，等待揽收', done: true});
+  if(status!=='pending' && status!=='cancelled'){ tr.push({t:o.time+8*3600000, txt:'快件已从'+pick(cityList)+'发出', done:true}); }
+  if(['transit','delivering','delivered','exception'].includes(status)){ tr.push({t:o.time+DAY, txt:'到达转运中心，正在分拣', done:true}); }
+  if(['delivering','delivered','exception'].includes(status)){ tr.push({t:o.time+2*DAY, txt:'快递员已取件派送中', done:true}); }
+  if(status==='delivering'){ tr.push({t:o.eta, txt:'正在派送，签收码 '+o.signCode, done:false}); }
+  if(status==='delivered'){ tr.push({t:o.time+2.5*DAY, txt:'已由本人签收，感谢使用', done:true}); }
+  if(status==='exception'){ tr.push({t:o.time+2*DAY, txt:'外包装破损，已启动理赔流程', done:false}); }
+  if(status==='cancelled'){ tr.push({t:o.time+3600000, txt:'订单已取消，费用原路退回', done:false}); }
+  o.traces = tr;
+  return o;
+}
+const ordersArr = Array.from({length: 522}, genOrder).sort((a,b)=>b.time-a.time);
+
+/* 历史反馈 */
+const fbMapInit = {};
+ordersArr.filter(o=>o.status==='delivered' && rnd()<0.5).slice(0,133).forEach(o=>{
+  const type = pick(['服务态度','配送时效','包装完好','其他']);
+  fbMapInit[o.no] = { type,
+    content: type==='配送时效' ? '送达时间比预期晚，希望提升时效' : type==='服务态度' ? '快递员服务态度很好，点赞' : type==='包装完好' ? '包装严实，物品完好无损' : '整体体验不错，继续保持',
+    time: fmtDateStatic(o.time + 3*DAY), reply: rnd()<0.6 ? '感谢您的反馈，我们已记录并持续改进服务。' : '' };
+});
+function fmtDateStatic(t){const d=new Date(t);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');}
+
+/* 员工待办 */
+const tasksInit = [];
+const activeOrders = ordersArr.filter(o=>['pending','delivering','transit'].includes(o.status));
+for(let i=0;i<87;i++){
+  const o = activeOrders[i % activeOrders.length];
+  tasksInit.push({ id:i+1, no:o.no, type: rnd()<0.5?'上门揽收':'派送', addr: o.dest + pick(['某小区','某大厦','某产业园','某街道']),
+    time: NOW - ri(0,6)*DAY + ri(0,10)*3600000, status: i<15?'todo':'done', voucher: rnd()<0.7 });
+}
+
+/* 用户 */
+const usersInit = Array.from({length:42},(_,i)=>({
+  id: i+1, name: pick(nameList), account: 'user'+String(1000+i),
+  role: i<32?'客户':i<40?'物流员工':'系统管理员',
+  active: rnd()>0.08, orderCount: ri(0,140), created: NOW - ri(30,540)*DAY
+}));
+
+/* 出入库记录 */
+const invInit = [];
+for(let i=0;i<26;i++) invInit.push({no:'IN'+String(26000+i), goods:pick(goodsList), qty:ri(5,80), wh:pick(whList), op:pick(nameList), time:NOW-ri(0,30)*DAY, type:'in'});
+for(let i=0;i<24;i++) invInit.push({no:'OUT'+String(18000+i), goods:pick(goodsList), qty:ri(3,60), wh:pick(whList), op:pick(nameList), time:NOW-ri(0,30)*DAY, type:'out'});
+
+
+/* ================= 后端对接配置 =================
+ * USE_MOCK = true  → 使用内置演示数据（双击 HTML 即可演示）
+ * USE_MOCK = false → 走真实后端，地址见 BASE
+ * 后端只需按 API_CONTRACT.md 实现接口即可，前端无需再改业务代码
+ * ================================================ */
+const CONFIG = {
+  USE_MOCK: true,
+  BASE: 'http://localhost:8080/api',
+  TOKEN: localStorage.getItem('ls_token') || '',
+  TIMEOUT: 8000,
+  /* 401 回调钩子：由 setup 注入，收到未授权时跳转登录页 */
+  on401: null
+};
+/* 会话存储 key */
+const LS_TOKEN = 'ls_token', LS_USER = 'ls_user', LS_REMEMBER = 'ls_remember';
+/* 角色字典：内部标识 <-> 中文角色名 */
+const ROLE_LABEL = { customer:'客户', staff:'物流员工', admin:'系统管理员' };
+const ROLE_KEY = { '客户':'customer', '物流员工':'staff', '系统管理员':'admin' };
+
+/* mock 数据源：即上方生成的半年运营数据 */
+const mockDB = {
+  orders: ordersArr, fb: fbMapInit, tasks: tasksInit, users: usersInit, inv: invInit,
+  seq: seq,
+  /* 演示账号：密码统一 123456，客户张三 / 员工李师傅 / 管理员王主任 */
+  accounts: [
+    { account:'zhangsan', phone:'13800138000', pwd:'123456', name:'张三', role:'customer' },
+    { account:'staff01',  phone:'13800138001', pwd:'123456', name:'李师傅', role:'staff' },
+    { account:'admin',    phone:'13800138002', pwd:'123456', name:'王主任', role:'admin' }
+  ],
+  warehouses: [
+    {name:'华东一号仓',used:1240,cap:1500},{name:'华东二号仓',used:890,cap:1200},
+    {name:'华南仓',used:1320,cap:1400},{name:'华北仓',used:620,cap:1000},
+    {name:'西南仓',used:445,cap:800},{name:'华中仓',used:760,cap:900}
+  ],
+  notices: [
+    {id:1,icon:'📦',title:'包裹已签收',desc:'今日有 1 个包裹由本人签收',time:'10 分钟前',read:false,act:'track'},
+    {id:2,icon:'✍️',title:'待您签收',desc:'有新包裹正在派送，请留意签收码',time:'1 小时前',read:false,act:'track'},
+    {id:3,icon:'💬',title:'反馈已回复',desc:'您关于配送时效的反馈客服已回复',time:'今天 09:12',read:false,act:'orders'},
+    {id:4,icon:'⚠️',title:'异常运单提醒',desc:'有运单外箱破损，已启动理赔',time:'昨天 18:40',read:true,act:'track'},
+    {id:5,icon:'🎉',title:'会员权益升级',desc:'半年累计寄件已达金牌标准',time:'3 天前',read:true,act:'home'}
+  ]
+};
+
+/* 统一请求封装：超时控制 / Token / 业务错误码 / 数据归一化 */
+function req(path, opts) {
+  opts = opts || {};
+  const ctrl = new AbortController();
+  const timer = setTimeout(function(){ ctrl.abort(); }, CONFIG.TIMEOUT);
+  const headers = { 'Content-Type': 'application/json' };
+  if (CONFIG.TOKEN) headers.Authorization = 'Bearer ' + CONFIG.TOKEN;
+  Object.keys(opts.headers || {}).forEach(function(k){ headers[k] = opts.headers[k]; });
+  return fetch(CONFIG.BASE + path, {
+    method: opts.method || 'GET',
+    headers: headers,
+    body: opts.body,
+    signal: ctrl.signal
+  }).then(function(r){
+    clearTimeout(timer);
+    if (r.status === 401) {
+      ElMessage.error('登录已失效，请重新登录');
+      if (CONFIG.on401) CONFIG.on401();
+      throw new Error('401 未授权');
+    }
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  }).then(function(j){
+    if (j && j.code !== undefined && j.code !== 0) throw new Error(j.message || '业务错误 ' + j.code);
+    return j && j.data !== undefined ? j.data : j;
+  }).catch(function(e){
+    throw new Error(e.name === 'AbortError' ? '请求超时' : e.message);
+  });
+}
+function qs(p) {
+  const u = new URLSearchParams();
+  Object.keys(p || {}).forEach(function(k){ const v = p[k]; if (v !== '' && v !== null && v !== undefined) u.append(k, v); });
+  const s2 = u.toString();
+  return s2 ? '?' + s2 : '';
+}
+/* 后端时间字段为 ISO 字符串，前端统一转毫秒 */
+function normTime(v) { return typeof v === 'string' ? new Date(v).getTime() : v; }
+function normOrder(o) {
+  if (!o) return o;
+  return Object.assign({}, o, {
+    time: normTime(o.time), eta: normTime(o.eta),
+    traces: (o.traces || []).map(function(t){ return Object.assign({}, t, { t: normTime(t.t) }); }),
+    fb: o.fb || null
+  });
+}
+function withFbMock(o) {
+  return Object.assign({}, o, { fb: o.fb || mockDB.fb[o.no] || null });
+}
+
+/* ================= API：mock 与真实后端同一套签名 ================= */
+const api = {
+  /* ---------------- 认证 ---------------- */
+  /* 登录：入参 {account, pwd}，返回 {token, role, name, account} */
+  login: function(d) {
+    if (CONFIG.USE_MOCK) {
+      return new Promise(function(res, rej){
+        setTimeout(function(){
+          const kw = String(d.account || '').trim();
+          const a = mockDB.accounts.find(function(x){ return x.account === kw; });
+          if (!a) return rej(new Error('用户不存在，请先注册'));
+          if (a.pwd !== d.pwd) return rej(new Error('密码错误，请重试'));
+          res({ token: 'mock.' + a.role + '.' + Date.now(), role: a.role, name: a.name, account: a.account });
+        }, 400);
+      });
+    }
+    return req('/auth/login', { method:'POST', body: JSON.stringify({ username: d.account, password: d.pwd }) });
+  },
+  /* 注册：入参 {account, pwd, role}，注册成功直接返回登录态 */
+  register: function(d) {
+    if (CONFIG.USE_MOCK) {
+      return new Promise(function(res, rej){
+        setTimeout(function(){
+          const acc = String(d.account || '').trim();
+          const name = /^[A-Za-z]/.test(acc) ? acc : '用户' + acc.slice(-4);
+          if (mockDB.accounts.some(function(x){ return x.account === acc; }))
+            return rej(new Error('该用户名已被注册，请直接登录'));
+          const a = { account: acc, pwd: d.pwd, name: name, role: d.role || 'customer' };
+          mockDB.accounts.push(a);
+          /* 新用户同步写入管理员「用户管理」列表（字段与现有用户表保持一致） */
+          mockDB.users.unshift({ id: 9000 + mockDB.accounts.length, name: a.name, account: a.account,
+            role: ROLE_LABEL[a.role] || '客户', active: true, orderCount: 0, created: Date.now() });
+          res({ token: 'mock.' + a.role + '.' + Date.now(), role: a.role, name: a.name, account: a.account });
+        }, 500);
+      });
+    }
+    return req('/auth/register', { method:'POST',
+      body: JSON.stringify({ username: d.account, password: d.pwd, role: d.role }) });
+  },
+  /* 注册已简化为「用户名 + 密码」，不再需要短信验证码 */
+  /* 登出：通知服务端失效令牌 */
+  logout: function() {
+    if (CONFIG.USE_MOCK) return Promise.resolve({});
+    return req('/auth/logout', { method:'POST' });
+  },
+  /* 运单列表（服务端分页、关键字、状态筛选） */
+  orders: function(p) {
+    p = p || {};
+    if (CONFIG.USE_MOCK) {
+      const kw = p.kw || '';
+      const list = mockDB.orders.filter(function(o){
+        return (!kw || o.no.indexOf(kw) >= 0 || o.goods.indexOf(kw) >= 0) && (!p.status || o.status === p.status);
+      });
+      const page = p.page || 1, size = p.size || 10;
+      return Promise.resolve({ list: list.slice((page-1)*size, page*size).map(withFbMock), total: list.length });
+    }
+    return req('/orders' + qs(p)).then(function(r){
+      return { list: (r.list || []).map(normOrder), total: r.total };
+    });
+  },
+  /* 运单详情（含轨迹） */
+  order: function(no) {
+    if (CONFIG.USE_MOCK) return Promise.resolve(withFbMock(mockDB.orders.find(function(o){ return o.no === no; }) || null));
+    return req('/orders/' + no).then(normOrder);
+  },
+  /* 概览统计 */
+  stats: function() {
+    if (CONFIG.USE_MOCK) {
+      const o = mockDB.orders, t = mockDB.tasks;
+      const by = function(st){ return o.filter(function(x){ return x.status === st; }).length; };
+      return Promise.resolve({
+        total: o.length, delivered: by('delivered'), exception: by('exception'),
+        inTransit: o.filter(function(x){ return x.status === 'transit' || x.status === 'delivering'; }).length,
+        pending: by('pending'), cancelled: by('cancelled'),
+        revenue: o.filter(function(x){ return x.status !== 'cancelled'; }).reduce(function(a,b){ return a + b.fee; }, 0),
+        fbCount: Object.keys(mockDB.fb).length,
+        tasksTodo: t.filter(function(x){ return x.status === 'todo'; }).length,
+        tasksDone: t.filter(function(x){ return x.status === 'done'; }).length,
+        noVoucher: t.filter(function(x){ return x.status === 'done' && !x.voucher; }).length,
+        monthDeliver: o.filter(function(x){ return ['delivering','delivered'].indexOf(x.status) >= 0 && NOW - x.time < 30*DAY; }).length
+      });
+    }
+    return req('/stats/overview');
+  },
+  weekly: function() {
+    if (CONFIG.USE_MOCK) {
+      const arr = [];
+      for (let i = 6; i >= 0; i--) {
+        const t0 = NOW - i*DAY, k = new Date(t0); k.setHours(0,0,0,0);
+        const n = mockDB.orders.filter(function(o){ return o.time >= k.getTime() && o.time < k.getTime() + DAY; }).length;
+        arr.push({ day: i === 0 ? '今天' : '周' + '日一二三四五六'[k.getDay()], n: n });
+      }
+      return Promise.resolve(arr);
+    }
+    return req('/stats/weekly');
+  },
+  monthly: function() {
+    if (CONFIG.USE_MOCK) {
+      const map = {};
+      mockDB.orders.forEach(function(o){
+        const d = new Date(o.time);
+        const m = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+        map[m] = map[m] || { month: m, count: 0, delivered: 0, exception: 0, fee: 0 };
+        map[m].count++;
+        if (o.status === 'delivered') map[m].delivered++;
+        if (o.status === 'exception') map[m].exception++;
+        if (o.status !== 'cancelled') map[m].fee += o.fee;
+      });
+      return Promise.resolve(Object.keys(map).sort().map(function(k){ return map[k]; }));
+    }
+    return req('/stats/monthly');
+  },
+  /* 员工待办 */
+  tasks: function(p) {
+    p = p || {};
+    if (CONFIG.USE_MOCK) {
+      const list = mockDB.tasks.filter(function(t){ return !p.status || t.status === p.status; })
+        .sort(function(a,b){ return b.time - a.time; });
+      const page = p.page || 1, size = p.size || 10;
+      return Promise.resolve({ list: list.slice((page-1)*size, page*size), total: list.length });
+    }
+    return req('/tasks' + qs(p));
+  },
+  updateTaskStatus: function(id, data) {
+    if (CONFIG.USE_MOCK) {
+      const t = mockDB.tasks.find(function(x){ return x.id === id; });
+      const o = t && mockDB.orders.find(function(x){ return x.no === t.no; });
+      if (!t) return Promise.reject(new Error('任务不存在'));
+      t.status = 'done';
+      if (o) {
+        o.status = data.status;
+        o.traces.push({ t: NOW, txt: stTextMap[data.status] + (data.status === 'delivered' ? '，感谢使用' : ''), done: true });
+      }
+      return Promise.resolve({ ok: true });
+    }
+    return req('/tasks/' + id + '/status', { method: 'POST', body: JSON.stringify(data) });
+  },
+  uploadVoucher: function(id, fd) {
+    if (CONFIG.USE_MOCK) {
+      const t = mockDB.tasks.find(function(x){ return x.id === id; });
+      if (t) { t.voucher = true; t.status = 'done'; }
+      return Promise.resolve({ ok: true });
+    }
+    return fetch(CONFIG.BASE + '/tasks/' + id + '/voucher', {
+      method: 'POST',
+      headers: CONFIG.TOKEN ? { Authorization: 'Bearer ' + CONFIG.TOKEN } : {},
+      body: fd
+    }).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+  },
+  /* 客户：下单 / 签收 / 反馈 */
+  createOrder: function(data) {
+    if (CONFIG.USE_MOCK) {
+      const d = new Date(NOW);
+      const no = 'SF' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + (++mockDB.seq);
+      const o = { no: no, goods: data.goods, dest: data.dest, receiver: data.receiver, fee: data.fee,
+        status: 'pending', time: NOW, eta: NOW + 3*DAY, signCode: String(Math.floor(1000 + Math.random()*9000)),
+        traces: [{ t: NOW, txt: '寄件成功，等待揽收', done: true }] };
+      mockDB.orders.unshift(o);
+      return Promise.resolve(o);
+    }
+    return req('/orders', { method: 'POST', body: JSON.stringify(data) }).then(normOrder);
+  },
+  sign: function(no, data) {
+    if (CONFIG.USE_MOCK) {
+      const o = mockDB.orders.find(function(x){ return x.no === no; });
+      if (!o) return Promise.reject(new Error('运单不存在'));
+      if (o.status !== 'delivering') return Promise.reject(new Error('该运单当前不可签收'));
+      if (data.code !== o.signCode) return Promise.reject(new Error('签收码不正确'));
+      o.status = 'delivered';
+      o.traces.push({ t: NOW, txt: '已由' + data.by + '签收，感谢使用', done: true });
+      return Promise.resolve(o);
+    }
+    return req('/orders/' + no + '/sign', { method: 'POST', body: JSON.stringify(data) }).then(normOrder);
+  },
+  feedback: function(no, data) {
+    if (CONFIG.USE_MOCK) {
+      if (mockDB.fb[no]) return Promise.reject(new Error('该运单已提交过反馈'));
+      if (!data.content || !data.content.trim()) return Promise.reject(new Error('请填写反馈内容'));
+      const fb = { type: data.type, content: data.content, time: fmtDateStatic(NOW), reply: '' };
+      mockDB.fb[no] = fb;
+      const o = mockDB.orders.find(function(x){ return x.no === no; });
+      if (o) o.fb = fb;
+      return Promise.resolve(fb);
+    }
+    return req('/orders/' + no + '/feedback', { method: 'POST', body: JSON.stringify(data) });
+  },
+  /* 库存 */
+  inventory: function(p) {
+    p = p || {};
+    if (CONFIG.USE_MOCK) return Promise.resolve(mockDB.inv.slice().sort(function(a,b){ return b.time - a.time; }));
+    return req('/inventory' + qs(p));
+  },
+  createInv: function(data) {
+    if (CONFIG.USE_MOCK) {
+      const rec = { no: (data.type === 'in' ? 'IN' : 'OUT') + (26000 + mockDB.inv.length), goods: data.goods,
+        qty: data.qty, wh: data.wh, op: '张三', time: NOW, type: data.type };
+      mockDB.inv.unshift(rec);
+      const w = mockDB.warehouses.find(function(x){ return x.name === data.wh; });
+      if (w) w.used += data.type === 'in' ? data.qty : -data.qty;
+      return Promise.resolve(rec);
+    }
+    return req('/inventory', { method: 'POST', body: JSON.stringify(data) });
+  },
+  warehouses: function() {
+    if (CONFIG.USE_MOCK) return Promise.resolve(mockDB.warehouses.slice());
+    return req('/warehouses');
+  },
+  /* 用户与角色 */
+  users: function(p) {
+    p = p || {};
+    if (CONFIG.USE_MOCK) {
+      const kw = p.kw || '';
+      const list = mockDB.users.filter(function(u){
+        return (!kw || u.name.indexOf(kw) >= 0 || u.account.indexOf(kw) >= 0) && (!p.role || u.role === p.role);
+      });
+      const page = p.page || 1, size = p.size || 10;
+      return Promise.resolve({ list: list.slice((page-1)*size, page*size), total: list.length });
+    }
+    return req('/users' + qs(p));
+  },
+  updateUserRole: function(id, role) {
+    if (CONFIG.USE_MOCK) {
+      const u = mockDB.users.find(function(x){ return x.id === id; });
+      if (u) u.role = role;
+      return Promise.resolve({ ok: true });
+    }
+    return req('/users/' + id + '/role', { method: 'PATCH', body: JSON.stringify({ role: role }) });
+  },
+  batchRole: function(role, ids) {
+    if (CONFIG.USE_MOCK) {
+      mockDB.users.forEach(function(u){ if (ids.indexOf(u.id) >= 0) u.role = role; });
+      return Promise.resolve({ ok: true, count: ids.length });
+    }
+    return req('/users/batch-role', { method: 'POST', body: JSON.stringify({ role: role, ids: ids }) });
+  },
+  notices: function() {
+    if (CONFIG.USE_MOCK) return Promise.resolve(mockDB.notices.slice());
+    return req('/notifications');
+  }
+};
+
+/* ============ 应用 ============ */
+createApp({
+  setup(){
+    const s = reactive({
+      role:'customer', active:'home', crumbParent:'',
+      collapsed:false, searchKw:'', notifOpen:false,
+      /* 认证态 */
+      auth:{ tab:'login', logged:false, remember:true, submitting:false, profileVisible:false,
+        user:{ name:'', account:'', role:'customer', loginAt:'' },
+        login:{ account:'', pwd:'' },
+        reg:{ account:'', pwd:'', pwd2:'', role:'customer', agree:false } },
+      /* 订单 */
+      orderKw:'', orderFilter:'', orderPage:1, orderSize:10, orderList:[], orderTotal:0,
+      waitSignList:[], signableList:[], latestList:[],
+      /* 追踪与签收 */
+      trackSel:'', trackOrder:null, signForm:{no:'',code:'',by:'本人'},
+      /* 寄件 */
+      sendForm:{to:'',dest:'',goods:goodsList[0],weight:1},
+      /* 反馈 */
+      fbVisible:false, fbReadonly:false, fbForm:{no:'',type:'服务态度',content:'',time:'',reply:''},
+      fbTypes:['服务态度','配送时效','包装完好','其他'], fbMap:{},
+      /* 员工 */
+      taskPage:1, taskList:[], taskTotal:0, statusForm:{task:null,status:'transit',note:''},
+      voucherTask:null, voucherFiles:[], voucherNote:'',
+      invTab:'in', invVisible:false, invForm:{type:'in',goods:'',qty:1,wh:''}, invList:[],
+      /* 管理员 */
+      userKw:'', userRoleFilter:'', userPage:1, userList:[], userTotal:0, batchRole:'', setTab:'base',
+      setForm:{name:'物流管理系统',phone:'400-800-1234',notice:'双 11 期间运力紧张，请提前寄件',first:1,firstFee:12,addFee:4,signNtf:true,excNtf:true,mktNtf:false},
+      /* 公共 */
+      notices:[], stats:{}, weekList:[], monthList:[], warehouses:[],
+      searchHits:[], loading:false
+    });
+
+    const fmt = function(t){ const d = new Date(t); return String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
+    const fmtDate = function(t){ const d = new Date(t); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+    const stText = function(v){ return stTextMap[v] || v; };
+    const stTag = function(v){ return stTagMap[v] || 'info'; };
+
+    const menus = computed(function(){
+      if(s.role==='customer') return [{k:'home',i:'🏠',t:'首页'},{k:'send',i:'📦',t:'寄件'},{k:'track',i:'🔍',t:'包裹追踪'},{k:'orders',i:'📋',t:'我的订单'}];
+      if(s.role==='staff') return [{k:'work',i:'📊',t:'工作台'},{k:'inventory',i:'📦',t:'库存管理'},{k:'board',i:'📈',t:'库存看板'}];
+      return [{k:'dash',i:'📈',t:'仪表盘'},{k:'users',i:'👥',t:'用户管理'},{k:'reports',i:'📑',t:'报表中心'},{k:'settings',i:'⚙️',t:'系统设置'}];
+    });
+    const titleMap = {home:'首页',send:'寄件',track:'包裹追踪',orders:'我的订单',work:'工作台',status:'状态更新',voucher:'凭证上传',inventory:'库存管理',board:'库存看板',dash:'仪表盘',users:'用户管理',reports:'报表中心',settings:'系统设置'};
+    const pageTitle = computed(function(){ return titleMap[s.active] || ''; });
+    const roleText = computed(function(){ return {customer:'客户',staff:'物流员工',admin:'系统管理员'}[s.role]; });
+
+    function go(k){
+      s.active = k;
+      s.crumbParent = (s.role==='staff' && (k==='status'||k==='voucher')) ? '工作台' : '';
+    }
+    function switchRole(r){
+      if(r===s.role) return;
+      s.role = r;
+      s.active = {customer:'home',staff:'work',admin:'dash'}[r];
+      s.crumbParent = '';
+      ElMessage.success('已切换为「' + roleText.value + '」视角');
+      loadByRole(r);
+    }
+
+    /* ---------- 数据加载（统一走 api） ---------- */
+    function onFail(e){ ElMessage.error('请求失败：' + (e && e.message ? e.message : e)); return null; }
+    async function loadOrders(){
+      const r = await api.orders({kw:s.orderKw, status:s.orderFilter, page:s.orderPage, size:s.orderSize}).catch(onFail);
+      if(r){ s.orderList = r.list; s.orderTotal = r.total; }
+    }
+    async function loadWaitSign(){
+      const r = await api.orders({status:'delivering', size:20}).catch(onFail);
+      if(r){ s.signableList = r.list; s.waitSignList = r.list.slice(0,5); }
+    }
+    async function loadLatest(){
+      const r = await api.orders({size:8}).catch(onFail);
+      if(r) s.latestList = r.list;
+    }
+    async function loadStats(){ const r = await api.stats().catch(onFail); if(r) s.stats = r; }
+    async function loadWeek(){ const r = await api.weekly().catch(onFail); if(r) s.weekList = r; }
+    async function loadMonth(){ const r = await api.monthly().catch(onFail); if(r) s.monthList = r; }
+    async function loadTasks(){
+      const r = await api.tasks({status:'todo', page:s.taskPage, size:10}).catch(onFail);
+      if(r){ s.taskList = r.list; s.taskTotal = r.total; }
+    }
+    async function loadUsers(){
+      const r = await api.users({kw:s.userKw, role:s.userRoleFilter, page:s.userPage, size:10}).catch(onFail);
+      if(r){ s.userList = r.list; s.userTotal = r.total; }
+    }
+    async function loadInv(){ const r = await api.inventory({}).catch(onFail); if(r) s.invList = r; }
+    async function loadWarehouses(){
+      const r = await api.warehouses().catch(onFail);
+      if(r){ s.warehouses = r; if(!s.invForm.wh && r.length) s.invForm.wh = r[0].name; }
+    }
+    async function loadNotices(){ const r = await api.notices().catch(onFail); if(r) s.notices = r; }
+    async function loadTrack(no){
+      if(!no){ s.trackOrder = null; return; }
+      const r = await api.order(no).catch(onFail);
+      if(r) s.trackOrder = r;
+    }
+    async function loadAll(){
+      s.loading = true;
+      await Promise.all([loadStats(), loadWeek(), loadMonth(), loadOrders(), loadWaitSign(), loadLatest(),
+        loadTasks(), loadUsers(), loadInv(), loadWarehouses(), loadNotices()]);
+      s.loading = false;
+      if(!CONFIG.USE_MOCK) ElMessage.success('已连接后端：' + CONFIG.BASE);
+    }
+    function loadByRole(r){
+      loadStats(); loadWeek(); loadMonth();
+      if(r==='customer'){ loadOrders(); loadWaitSign(); }
+      if(r==='staff'){ loadTasks(); loadInv(); loadWarehouses(); }
+      if(r==='admin'){ loadUsers(); loadMonth(); }
+    }
+    /* 防抖：输入类筛选 */
+    function debounce(fn, ms){ let t; return function(){ clearTimeout(t); t = setTimeout(fn, ms); }; }
+    const reloadOrdersDebounced = debounce(function(){ s.orderPage = 1; loadOrders(); }, 300);
+    const reloadUsersDebounced = debounce(function(){ s.userPage = 1; loadUsers(); }, 300);
+
+    watch(function(){ return [s.orderFilter, s.orderPage, s.orderSize]; }, loadOrders);
+    watch(function(){ return s.orderKw; }, reloadOrdersDebounced);
+    watch(function(){ return [s.userRoleFilter, s.userPage]; }, loadUsers);
+    watch(function(){ return s.userKw; }, reloadUsersDebounced);
+    watch(function(){ return s.taskPage; }, loadTasks);
+    watch(function(){ return s.trackSel; }, loadTrack);
+    onMounted(function(){
+      CONFIG.on401 = function(){ doLogout(true); };
+      const restored = restoreSession();
+      if (!CONFIG.USE_MOCK) console.log('[物流系统] 后端地址 ' + CONFIG.BASE);
+      if (!restored) console.log('[物流系统] 未检测到登录会话，展示登录页');
+    });
+
+    /* ---------- 客户：追踪 / 签收 / 反馈 / 下单 ---------- */
+    function openTrack(o){
+      if(s.role!=='customer'){ ElMessage.info('当前为 ' + roleText.value + ' 视角'); return; }
+      go('track'); s.trackSel = o.no; s.trackOrder = o.traces ? o : null; loadTrack(o.no);
+    }
+    function trackOrder(o){ openTrack(o); }
+    function resetOrderFilter(){ s.orderKw=''; s.orderFilter=''; s.orderPage=1; loadOrders(); }
+
+    function openFeedback(o, readonly){
+      const ex = o.fb || s.fbMap[o.no];
+      if(readonly && !ex) return;
+      if(ex){ s.fbForm = {no:o.no, type:ex.type, content:ex.content, time:ex.time, reply:ex.reply}; s.fbReadonly = true; }
+      else { s.fbForm = {no:o.no, type:'服务态度', content:'', time:'', reply:''}; s.fbReadonly = false; }
+      s.fbVisible = true;
+    }
+    async function saveFeedback(){
+      if(!s.fbForm.content.trim()){ ElMessage.warning('请填写反馈内容'); return; }
+      const r = await api.feedback(s.fbForm.no, {type:s.fbForm.type, content:s.fbForm.content}).catch(onFail);
+      if(!r) return;
+      s.fbMap[s.fbForm.no] = r;
+      const row = s.orderList.find(function(x){ return x.no === s.fbForm.no; });
+      if(row) row.fb = r;
+      s.fbVisible = false;
+      ElMessage.success('反馈已提交，感谢您的意见');
+      loadOrders();
+    }
+    async function confirmSign(){
+      if(!s.signForm.no){ ElMessage.warning('请选择待签收运单'); return; }
+      if(!s.signForm.code){ ElMessage.warning('请输入签收码'); return; }
+      const r = await api.sign(s.signForm.no, {code:s.signForm.code, by:s.signForm.by}).catch(onFail);
+      if(!r) return;
+      const no = r.no;
+      s.signForm = {no:'', code:'', by:'本人'};
+      ElMessage.success('签收成功，感谢使用');
+      loadOrders(); loadWaitSign(); loadStats(); loadTrack(s.trackSel);
+      ElMessageBox.confirm('是否顺便评价本次配送服务？','签收完成',{confirmButtonText:'去评价',cancelButtonText:'暂不'})
+        .then(function(){ openFeedback({no:no, fb:null}); }).catch(function(){});
+    }
+    const sendPrice = computed(function(){
+      return +(s.setForm.firstFee + Math.max(0, Math.ceil(s.sendForm.weight - s.setForm.first)) * s.setForm.addFee).toFixed(2);
+    });
+    async function submitSend(){
+      if(!s.sendForm.to || !s.sendForm.dest){ ElMessage.warning('请填写收件人和地址'); return; }
+      const r = await api.createOrder({receiver:s.sendForm.to, dest:s.sendForm.dest,
+        goods:s.sendForm.goods, weight:s.sendForm.weight, fee: sendPrice.value}).catch(onFail);
+      if(!r) return;
+      resetSend();
+      ElMessage.success('下单成功，运单号 ' + r.no + '，快递员将上门揽收');
+      s.orderPage = 1; loadOrders(); loadStats();
+    }
+    function resetSend(){ s.sendForm = {to:'',dest:'',goods:goodsList[0],weight:1}; }
+
+    /* ---------- 员工：状态更新 / 凭证 / 库存 ---------- */
+    function openStatus(task){ s.statusForm = {task:task, status:'transit', note:''}; go('status'); }
+    async function saveStatus(){
+      const task = s.statusForm.task;
+      if(!task) return;
+      const r = await api.updateTaskStatus(task.id, {status:s.statusForm.status, note:s.statusForm.note}).catch(onFail);
+      if(!r) return;
+      ElMessage.success('运单 ' + task.no + ' 已更新为「' + stTextMap[s.statusForm.status] + '」');
+      go('work'); loadTasks(); loadStats();
+    }
+    function openVoucher(task){ s.voucherTask = task; s.voucherFiles = []; s.voucherNote = ''; go('voucher'); }
+    function onVoucherFile(file, files){ s.voucherFiles = files; }
+    async function saveVoucher(){
+      if(!s.voucherTask) return;
+      const fd = new FormData();
+      fd.append('note', s.voucherNote);
+      s.voucherFiles.forEach(function(f){
+        if(f.raw) fd.append('files', f.raw, f.name);
+      });
+      const r = await api.uploadVoucher(s.voucherTask.id, fd).catch(onFail);
+      if(!r) return;
+      ElMessage.success('凭证已上传');
+      go('work'); loadTasks(); loadStats();
+    }
+    const invIn = computed(function(){ return s.invList.filter(function(r){ return r.type === 'in'; }); });
+    const invOut = computed(function(){ return s.invList.filter(function(r){ return r.type === 'out'; }); });
+    async function addInv(){
+      if(!s.invForm.goods){ ElMessage.warning('请填写物品名称'); return; }
+      const r = await api.createInv({type:s.invForm.type, goods:s.invForm.goods, qty:s.invForm.qty, wh:s.invForm.wh}).catch(onFail);
+      if(!r) return;
+      s.invVisible = false;
+      ElMessage.success((s.invForm.type==='in'?'入库':'出库') + '成功');
+      s.invTab = s.invForm.type;
+      loadInv(); loadWarehouses();
+    }
+
+    /* ---------- 管理员：用户 / 角色 ---------- */
+    async function onRoleChange(u){
+      const r = await api.updateUserRole(u.id, u.role).catch(onFail);
+      if(r) ElMessage.success('已将 ' + u.name + ' 的角色调整为「' + u.role + '」');
+    }
+    async function batchAssign(){
+      const ids = s.userList.filter(function(u){ return u.role === '客户'; }).map(function(u){ return u.id; });
+      if(!ids.length){ ElMessage.warning('当前页没有客户角色用户'); return; }
+      const r = await api.batchRole(s.batchRole, ids).catch(onFail);
+      if(r) { ElMessage.success('已批量调整 ' + ids.length + ' 位用户'); loadUsers(); }
+    }
+    const permMatrix = [
+      {mod:'寄件下单',c:true,s:false,a:true},{mod:'包裹追踪 / 签收',c:true,s:true,a:true},
+      {mod:'意见反馈',c:true,s:false,a:false},{mod:'状态更新 / 凭证',c:false,s:true,a:false},
+      {mod:'库存管理',c:false,s:true,a:false},{mod:'用户与角色',c:false,s:false,a:true},
+      {mod:'报表 / 系统设置',c:false,s:false,a:true}
+    ];
+    const weekMax = computed(function(){ return Math.max.apply(null, s.weekList.map(function(d){ return d.n; }).concat([1])); });
+    const monthMax = computed(function(){ return Math.max.apply(null, s.monthList.map(function(m){ return m.count; }).concat([1])); });
+    function sumReport(param){
+      return param.columns.map(function(col, i){
+        if(i===0) return '合计';
+        const vals = param.data.map(function(r){ return Number(r[col.property]); });
+        if(col.property==='fee') return '¥' + vals.reduce(function(a,b){ return a+b; }, 0).toFixed(2);
+        return vals.reduce(function(a,b){ return a + (isNaN(b) ? 0 : b); }, 0);
+      });
+    }
+
+    /* ---------- 搜索 / 通知 ---------- */
+    const doSearchDebounced = debounce(async function(){
+      if(!s.searchKw){ s.searchHits = []; return; }
+      const r = await api.orders({kw:s.searchKw, size:6}).catch(function(){ return null; });
+      s.searchHits = r ? r.list : [];
+    }, 300);
+    function onSearchInput(){ doSearchDebounced(); }
+    function goSearch(){ if(s.searchHits.length) openTrack(s.searchHits[0]); }
+    const unreadCount = computed(function(){ return s.notices.filter(function(n){ return !n.read; }).length; });
+    function readNotice(n){ n.read = true; go(n.act); }
+
+    /* ================= 认证：登录 / 注册 / 会话 ================= */
+    const loginRef = ref(null), regRef = ref(null);
+    const loginRules = {
+      account: [{ required:true, message:'请输入用户名', trigger:'blur' }],
+      pwd: [{ required:true, message:'请输入密码', trigger:'blur' },
+            { min:6, message:'密码至少 6 位', trigger:'blur' }]
+    };
+    const USERNAME_RE = /^[A-Za-z0-9_]{4,16}$/;
+    const regRules = {
+      account: [{ required:true, message:'请设置用户名', trigger:'blur' },
+                { pattern:USERNAME_RE, message:'4-16 位字母、数字或下划线，且不能以下划线开头以外的符号', trigger:'blur' },
+                { validator:function(r,v,cb){
+                    if (!v || !USERNAME_RE.test(v)) return cb();
+                    /* 演示模式下可即时查重，真实模式交由后端返回 409 */
+                    if (CONFIG.USE_MOCK && mockDB.accounts.some(function(x){ return x.account === v; }))
+                      return cb(new Error('该用户名已被注册'));
+                    cb();
+                  }, trigger:'blur' }],
+      pwd: [{ required:true, message:'请设置密码', trigger:'blur' },
+            { min:6, max:20, message:'密码长度 6-20 位', trigger:'blur' }],
+      pwd2: [{ required:true, message:'请再次输入密码', trigger:'blur' },
+             { validator:function(r,v,cb){ v === s.auth.reg.pwd ? cb() : cb(new Error('两次输入的密码不一致')); }, trigger:'blur' }],
+      agree: [{ validator:function(r,v,cb){ v ? cb() : cb(new Error('请先阅读并同意用户协议')); }, trigger:'change' }]
+    };
+
+    const nowStr = function(){
+      const d = new Date(), p = function(n){ return String(n).padStart(2,'0'); };
+      return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+' '+p(d.getHours())+':'+p(d.getMinutes());
+    };
+    function saveSession(remember){
+      try {
+        const store = remember ? localStorage : sessionStorage;
+        store.setItem(LS_TOKEN, CONFIG.TOKEN);
+        store.setItem(LS_USER, JSON.stringify(s.auth.user));
+        localStorage.setItem(LS_REMEMBER, remember ? '1' : '0');
+      } catch(e) { /* file:// 或隐私模式下降级为不持久化 */ }
+    }
+    function clearSession(){
+      try {
+        [localStorage, sessionStorage].forEach(function(st){
+          st.removeItem(LS_TOKEN); st.removeItem(LS_USER); st.removeItem(LS_REMEMBER);
+        });
+      } catch(e) {}
+    }
+    /* 登录成功后统一落地：令牌、角色视角、会话持久化 */
+    function afterLogin(d, msg){
+      CONFIG.TOKEN = d.token || '';
+      s.auth.user = { name: d.name || d.account || '用户', account: d.account || '',
+        role: d.role || 'customer', loginAt: nowStr() };
+      s.auth.logged = true;
+      saveSession(s.auth.remember);
+      s.role = s.auth.user.role;
+      s.active = { customer:'home', staff:'work', admin:'dash' }[s.role];
+      s.crumbParent = '';
+      ElMessage.success((msg || '欢迎回来') + '，' + s.auth.user.name);
+      loadAll();
+    }
+    async function submitLogin(){
+      const ok = await loginRef.value.validate().catch(function(){ return false; });
+      if (!ok) return;
+      s.auth.submitting = true;
+      try {
+        const d = await api.login({ account: s.auth.login.account.trim(), pwd: s.auth.login.pwd });
+        afterLogin(d, '登录成功');
+      } catch(e) { ElMessage.error(e.message || '登录失败，请重试'); }
+      finally { s.auth.submitting = false; }
+    }
+    async function submitReg(){
+      const ok = await regRef.value.validate().catch(function(){ return false; });
+      if (!ok) return;
+      s.auth.submitting = true;
+      try {
+        const d = await api.register({ account: s.auth.reg.account.trim(),
+          pwd: s.auth.reg.pwd, role: s.auth.reg.role });
+        afterLogin(d, '注册成功');
+        s.auth.reg = { account:'', pwd:'', pwd2:'', role:'customer', agree:false };
+        if (regRef.value) regRef.value.clearValidate();
+        if (s.role === 'admin') loadUsers();
+      } catch(e) { ElMessage.error(e.message || '注册失败，请重试'); }
+      finally { s.auth.submitting = false; }
+    }
+    /* 演示账号一键填入 */
+    function fillDemo(role){
+      const map = { customer:{account:'zhangsan',pwd:'123456'}, staff:{account:'staff01',pwd:'123456'}, admin:{account:'admin',pwd:'123456'} };
+      const a = map[role];
+      if (!a) return;
+      s.auth.tab = 'login';
+      s.auth.login.account = a.account;
+      s.auth.login.pwd = a.pwd;
+      ElMessage.info('已填入演示账号 ' + a.account + '，点击登录进入');
+      if (loginRef.value) loginRef.value.clearValidate();
+    }
+    function forgotPwd(){
+      ElMessageBox.alert('演示环境统一初始密码：<b>123456</b><br>正式环境请联系系统管理员重置密码。',
+        '找回密码', { confirmButtonText:'知道了', dangerouslyUseHTMLString:true });
+    }
+    function doLogout(quiet){
+      api.logout().catch(function(){});
+      clearSession();
+      CONFIG.TOKEN = '';
+      s.auth.logged = false;
+      s.auth.tab = 'login';
+      s.auth.profileVisible = false;
+      s.auth.login = { account:'', pwd:'' };
+      s.auth.user = { name:'', account:'', role:'customer', loginAt:'' };
+      if (!quiet) ElMessage.success('已安全退出登录');
+    }
+    function logout(){
+      ElMessageBox.confirm('确定要退出当前账号吗？', '退出登录',
+        { confirmButtonText:'退出', cancelButtonText:'取消', type:'warning' })
+        .then(function(){ doLogout(false); }).catch(function(){});
+    }
+    function onUserCmd(c){
+      if (c === 'profile') s.auth.profileVisible = true;
+      else if (c === 'switch') doLogout(false);
+      else if (c === 'logout') logout();
+    }
+    /* 会话恢复：刷新页面后保持登录态 */
+    function restoreSession(){
+      let tk = '', us = '';
+      try {
+        tk = localStorage.getItem(LS_TOKEN) || sessionStorage.getItem(LS_TOKEN) || '';
+        us = localStorage.getItem(LS_USER) || sessionStorage.getItem(LS_USER) || '';
+      } catch(e) { return false; }
+      if (!tk || !us) return false;
+      try {
+        const u = JSON.parse(us);
+        CONFIG.TOKEN = tk;
+        s.auth.user = Object.assign({ name:'', account:'', role:'customer', loginAt:'' }, u);
+        s.auth.logged = true;
+        s.auth.remember = true;
+        s.role = s.auth.user.role;
+        s.active = { customer:'home', staff:'work', admin:'dash' }[s.role];
+        loadAll();
+        return true;
+      } catch(e) { clearSession(); return false; }
+    }
+
+    return { s, CONFIG, ElMessage, menus, pageTitle, roleText, go, switchRole,
+      loadOrders, loadTasks, loadUsers, loadAll,
+      trackOrder, openFeedback, saveFeedback, confirmSign, sendPrice, submitSend, resetSend,
+      openStatus, saveStatus, openVoucher, onVoucherFile, saveVoucher,
+      invIn, invOut, addInv, weekMax, monthMax,
+      onRoleChange, batchAssign, permMatrix, sumReport,
+      onSearchInput, goSearch, unreadCount, readNotice, resetOrderFilter,
+      /* 认证 */
+      loginRef, regRef, loginRules, regRules,
+      submitLogin, submitReg, fillDemo, forgotPwd, logout, doLogout, onUserCmd, restoreSession,
+      fmt, fmtDate, stText, stTag, goodsList, statusList: Object.entries(stTextMap).map(function(e){ return {v:e[0], t:e[1]}; }) };
+  }
+}).use(ElementPlus).mount('#app');
+</script>
+</body></html>
