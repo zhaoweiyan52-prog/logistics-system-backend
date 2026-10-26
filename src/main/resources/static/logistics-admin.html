@@ -241,7 +241,7 @@
                 登 录
               </el-button>
             </el-form>
-            <div class="ap-demo">
+            <div class="ap-demo" v-if="CONFIG.USE_MOCK">
               <div class="ap-demo-t">💡 演示账号（点击一键填入，密码统一 123456）</div>
               <div class="ap-demo-btns">
                 <div class="ap-demo-b" @click="fillDemo('customer')">👤 客户 · 张三</div>
@@ -305,8 +305,8 @@
       <div class="logo-icon">🚚</div>
       <div class="logo-name">物流管理系统</div>
     </div>
-    <div class="top-search">
-      <el-input v-model="s.searchKw" placeholder="搜索订单、包裹、用户..." clearable
+    <div class="top-search" v-if="!phaseOne || s.role==='customer'">
+      <el-input v-model="s.searchKw" placeholder="搜索运单号 / 物品" clearable
         @keyup.enter="goSearch" @input="onSearchInput">
         <template #prefix>🔍</template>
       </el-input>
@@ -318,7 +318,7 @@
       </div>
     </div>
     <div class="top-right">
-      <el-dropdown @command="switchRole" trigger="click">
+      <el-dropdown v-if="!phaseOne" @command="switchRole" trigger="click">
         <span class="role-tag">{{ roleText }} ▾</span>
         <template #dropdown>
           <el-dropdown-menu>
@@ -328,7 +328,8 @@
           </el-dropdown-menu>
         </template>
       </el-dropdown>
-      <el-popover placement="bottom-end" width="330" trigger="click">
+      <span v-else class="role-tag">{{ roleText }}</span>
+      <el-popover v-if="!phaseOne" placement="bottom-end" width="330" trigger="click">
         <template #reference><div class="bell">🔔<span class="dot" v-if="unreadCount"></span></div></template>
         <div class="notif-item" v-for="n in s.notices" :key="n.id" :class="{unread:!n.read}" @click="readNotice(n)">
           <span style="font-size:18px">{{ n.icon }}</span>
@@ -380,8 +381,28 @@
     </div>
     <div class="page-title">{{ pageTitle }}</div>
 
+    <el-alert v-if="phaseOne" type="info" :closable="false" show-icon style="margin-bottom:18px"
+      title="第一阶段功能" description="现已开放客户寄件、订单查询和轨迹查看；签收、反馈、统计及员工管理功能将在后续阶段开放。"></el-alert>
+
+    <div v-if="phaseOne && s.active==='phaseIntro'" class="card">
+      <div class="card-title">{{ roleText }}功能暂未开放</div>
+      <p>当前账号已登录成功。任务、库存、报表和用户管理功能将在后续阶段开放。</p>
+      <p>如需体验寄件和订单查询，请退出当前账号，并注册或登录客户账号。</p>
+      <el-button @click="onUserCmd('switch')">切换账号</el-button>
+    </div>
+
+    <div v-if="phaseOne && s.active==='home' && s.role==='customer'" class="card">
+      <div class="card-title">欢迎使用物流管理系统</div>
+      <p>你可以创建寄件订单，查询自己的订单和物流轨迹。</p>
+      <div class="quick-grid">
+        <div class="quick-item" @click="go('send')"><div class="quick-icon">📦</div><div class="quick-text">立即寄件</div></div>
+        <div class="quick-item" @click="go('orders')"><div class="quick-icon">📋</div><div class="quick-text">我的订单</div></div>
+        <div class="quick-item" @click="go('track')"><div class="quick-icon">🔍</div><div class="quick-text">包裹追踪</div></div>
+      </div>
+    </div>
+
     <!-- ============ 客户：首页 ============ -->
-    <template v-if="s.active==='home' && s.role==='customer'">
+    <template v-if="!phaseOne && s.active==='home' && s.role==='customer'">
       <div class="stat-grid">
         <div class="stat-card clickable" @click="go('orders')">
           <div class="stat-label">累计寄件</div>
@@ -462,7 +483,7 @@
 
     <!-- ============ 客户：包裹追踪（右栏含签收确认） ============ -->
     <template v-if="s.active==='track' && s.role==='customer'">
-      <div style="display:grid;grid-template-columns:1fr 360px;gap:16px;align-items:start">
+      <div :style="{display:'grid',gridTemplateColumns:phaseOne?'minmax(0,1fr)':'1fr 360px',gap:'16px',alignItems:'start'}">
         <div class="card">
           <div class="card-title">物流轨迹</div>
           <el-select v-model="s.trackSel" style="width:100%;margin-bottom:18px"
@@ -478,7 +499,7 @@
               </div>
               <el-tag :type="stTag(s.trackOrder.status)">{{ stText(s.trackOrder.status) }}</el-tag>
             </div>
-            <div style="margin-bottom:14px" v-if="s.trackOrder.status==='delivering'">
+            <div style="margin-bottom:14px" v-if="!phaseOne && s.trackOrder.status==='delivering'">
               <el-alert type="warning" :closable="false" show-icon
                 title="包裹正在派送，请留意签收码" :description="'签收码：' + s.trackOrder.signCode" />
             </div>
@@ -495,7 +516,7 @@
           </div>
           <el-empty v-else description="请选择运单查看轨迹" />
         </div>
-        <div class="card">
+        <div class="card" v-if="!phaseOne">
           <div class="card-title">签收确认</div>
           <el-form label-width="70px">
             <el-form-item label="运单">
@@ -534,7 +555,7 @@
           </el-select>
           <el-button @click="resetOrderFilter">重置</el-button>
           <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">
-            共 {{ s.orderTotal }} 单 · 已反馈 {{ s.stats.fbCount || 0 }} 条
+            共 {{ s.orderTotal }} 单<span v-if="!phaseOne"> · 已反馈 {{ s.stats.fbCount || 0 }} 条</span>
           </span>
         </div>
         <el-table :data="s.orderList" @row-click="trackOrder" style="cursor:pointer" v-loading="s.loading">
@@ -558,7 +579,7 @@
           <el-table-column label="运费" width="100">
             <template #default="{row}"><span class="cell-fee">¥{{ row.fee.toFixed(2) }}</span></template>
           </el-table-column>
-          <el-table-column label="意见反馈" width="120">
+          <el-table-column v-if="!phaseOne" label="意见反馈" width="120">
             <template #default="{row}">
               <el-tag v-if="s.fbMap[row.no]" type="success" size="small">{{ s.fbMap[row.no].type }}</el-tag>
               <span v-else class="cell-sub">未反馈</span>
@@ -567,8 +588,10 @@
           <el-table-column label="操作" width="150" fixed="right">
             <template #default="{row}">
               <el-button link type="primary" @click.stop="trackOrder(row)">追踪</el-button>
-              <el-button v-if="!s.fbMap[row.no]" link type="primary" @click.stop="openFeedback(row)">写反馈</el-button>
-              <el-button v-else link @click.stop="openFeedback(row, true)">查看反馈</el-button>
+              <template v-if="!phaseOne">
+                <el-button v-if="!s.fbMap[row.no]" link type="primary" @click.stop="openFeedback(row)">写反馈</el-button>
+                <el-button v-else link @click.stop="openFeedback(row, true)">查看反馈</el-button>
+              </template>
             </template>
           </el-table-column>
         </el-table>
@@ -1053,12 +1076,14 @@ for(let i=0;i<24;i++) invInit.push({no:'OUT'+String(18000+i), goods:pick(goodsLi
  * ================================================ */
 const CONFIG = {
   USE_MOCK: false,
+  PHASE_ONE: true, // 真实后端第一阶段：只加载已实现模块；全量后端就绪后再关闭
   BASE: '/api',
   TOKEN: localStorage.getItem('ls_token') || '',
   TIMEOUT: 8000,
   /* 401 回调钩子：由 setup 注入，收到未授权时跳转登录页 */
   on401: null
 };
+const phaseOne = !CONFIG.USE_MOCK && CONFIG.PHASE_ONE;
 /* 会话存储 key */
 const LS_TOKEN = 'ls_token', LS_USER = 'ls_user', LS_REMEMBER = 'ls_remember';
 /* 角色字典：内部标识 <-> 中文角色名 */
@@ -1418,19 +1443,22 @@ createApp({
     const stTag = function(v){ return stTagMap[v] || 'info'; };
 
     const menus = computed(function(){
+      if(phaseOne && s.role!=='customer') return [{k:'phaseIntro',i:'ℹ️',t:'功能说明'}];
       if(s.role==='customer') return [{k:'home',i:'🏠',t:'首页'},{k:'send',i:'📦',t:'寄件'},{k:'track',i:'🔍',t:'包裹追踪'},{k:'orders',i:'📋',t:'我的订单'}];
       if(s.role==='staff') return [{k:'work',i:'📊',t:'工作台'},{k:'inventory',i:'📦',t:'库存管理'},{k:'board',i:'📈',t:'库存看板'}];
       return [{k:'dash',i:'📈',t:'仪表盘'},{k:'users',i:'👥',t:'用户管理'},{k:'reports',i:'📑',t:'报表中心'},{k:'settings',i:'⚙️',t:'系统设置'}];
     });
     const titleMap = {home:'首页',send:'寄件',track:'包裹追踪',orders:'我的订单',work:'工作台',status:'状态更新',voucher:'凭证上传',inventory:'库存管理',board:'库存看板',dash:'仪表盘',users:'用户管理',reports:'报表中心',settings:'系统设置'};
-    const pageTitle = computed(function(){ return titleMap[s.active] || ''; });
+    const pageTitle = computed(function(){ return s.active==='phaseIntro' ? '功能说明' : titleMap[s.active] || ''; });
     const roleText = computed(function(){ return {customer:'客户',staff:'物流员工',admin:'系统管理员'}[s.role]; });
 
     function go(k){
+      if(phaseOne && !menus.value.some(function(m){ return m.k===k; })){ laterStage(); return; }
       s.active = k;
       s.crumbParent = (s.role==='staff' && (k==='status'||k==='voucher')) ? '工作台' : '';
     }
     function switchRole(r){
+      if(phaseOne){ ElMessage.info('请通过切换账号使用对应角色'); return; }
       if(r===s.role) return;
       s.role = r;
       s.active = {customer:'home',staff:'work',admin:'dash'}[r];
@@ -1440,49 +1468,62 @@ createApp({
     }
 
     /* ---------- 数据加载（统一走 api） ---------- */
+    function laterStage(){ ElMessage.info('该功能将在后续阶段开放'); }
+    function initialPage(role){ return phaseOne && role!=='customer' ? 'phaseIntro' : {customer:'home',staff:'work',admin:'dash'}[role]; }
     function onFail(e){ ElMessage.error('请求失败：' + (e && e.message ? e.message : e)); return null; }
     async function loadOrders(){
+      if(!s.auth.logged) return;
       const r = await api.orders({kw:s.orderKw, status:s.orderFilter, page:s.orderPage, size:s.orderSize}).catch(onFail);
       if(r){ s.orderList = r.list; s.orderTotal = r.total; }
     }
     async function loadWaitSign(){
+      if(phaseOne || !s.auth.logged) return;
       const r = await api.orders({status:'delivering', size:20}).catch(onFail);
       if(r){ s.signableList = r.list; s.waitSignList = r.list.slice(0,5); }
     }
     async function loadLatest(){
+      if(phaseOne || !s.auth.logged) return;
       const r = await api.orders({size:8}).catch(onFail);
       if(r) s.latestList = r.list;
     }
-    async function loadStats(){ const r = await api.stats().catch(onFail); if(r) s.stats = r; }
-    async function loadWeek(){ const r = await api.weekly().catch(onFail); if(r) s.weekList = r; }
-    async function loadMonth(){ const r = await api.monthly().catch(onFail); if(r) s.monthList = r; }
+    async function loadStats(){ if(phaseOne || !s.auth.logged) return; const r = await api.stats().catch(onFail); if(r) s.stats = r; }
+    async function loadWeek(){ if(phaseOne || !s.auth.logged) return; const r = await api.weekly().catch(onFail); if(r) s.weekList = r; }
+    async function loadMonth(){ if(phaseOne || !s.auth.logged) return; const r = await api.monthly().catch(onFail); if(r) s.monthList = r; }
     async function loadTasks(){
+      if(phaseOne || !s.auth.logged) return;
       const r = await api.tasks({status:'todo', page:s.taskPage, size:10}).catch(onFail);
       if(r){ s.taskList = r.list; s.taskTotal = r.total; }
     }
     async function loadUsers(){
+      if(phaseOne || !s.auth.logged) return;
       const r = await api.users({kw:s.userKw, role:s.userRoleFilter, page:s.userPage, size:10}).catch(onFail);
       if(r){ s.userList = r.list; s.userTotal = r.total; }
     }
-    async function loadInv(){ const r = await api.inventory({}).catch(onFail); if(r) s.invList = r; }
+    async function loadInv(){ if(phaseOne || !s.auth.logged) return; const r = await api.inventory({}).catch(onFail); if(r) s.invList = r; }
     async function loadWarehouses(){
+      if(phaseOne || !s.auth.logged) return;
       const r = await api.warehouses().catch(onFail);
       if(r){ s.warehouses = r; if(!s.invForm.wh && r.length) s.invForm.wh = r[0].name; }
     }
-    async function loadNotices(){ const r = await api.notices().catch(onFail); if(r) s.notices = r; }
+    async function loadNotices(){ if(phaseOne || !s.auth.logged) return; const r = await api.notices().catch(onFail); if(r) s.notices = r; }
     async function loadTrack(no){
+      if(!s.auth.logged) return;
       if(!no){ s.trackOrder = null; return; }
       const r = await api.order(no).catch(onFail);
       if(r) s.trackOrder = r;
     }
     async function loadAll(){
+      if(!s.auth.logged) return;
       s.loading = true;
-      await Promise.all([loadStats(), loadWeek(), loadMonth(), loadOrders(), loadWaitSign(), loadLatest(),
-        loadTasks(), loadUsers(), loadInv(), loadWarehouses(), loadNotices()]);
-      s.loading = false;
-      if(!CONFIG.USE_MOCK) ElMessage.success('已连接后端：' + CONFIG.BASE);
+      try {
+        // 刷新会话仍用受保护的订单接口校验 token；不为未开放模块发送请求。
+        if(phaseOne) await loadOrders();
+        else await Promise.all([loadStats(), loadWeek(), loadMonth(), loadOrders(), loadWaitSign(), loadLatest(),
+          loadTasks(), loadUsers(), loadInv(), loadWarehouses(), loadNotices()]);
+      } finally { s.loading = false; }
     }
     function loadByRole(r){
+      if(phaseOne){ if(r==='customer') loadOrders(); return; }
       loadStats(); loadWeek(); loadMonth();
       if(r==='customer'){ loadOrders(); loadWaitSign(); }
       if(r==='staff'){ loadTasks(); loadInv(); loadWarehouses(); }
@@ -1515,6 +1556,7 @@ createApp({
     function resetOrderFilter(){ s.orderKw=''; s.orderFilter=''; s.orderPage=1; loadOrders(); }
 
     function openFeedback(o, readonly){
+      if(phaseOne){ laterStage(); return; }
       const ex = o.fb || s.fbMap[o.no];
       if(readonly && !ex) return;
       if(ex){ s.fbForm = {no:o.no, type:ex.type, content:ex.content, time:ex.time, reply:ex.reply}; s.fbReadonly = true; }
@@ -1522,6 +1564,7 @@ createApp({
       s.fbVisible = true;
     }
     async function saveFeedback(){
+      if(phaseOne){ laterStage(); return; }
       if(!s.fbForm.content.trim()){ ElMessage.warning('请填写反馈内容'); return; }
       const r = await api.feedback(s.fbForm.no, {type:s.fbForm.type, content:s.fbForm.content}).catch(onFail);
       if(!r) return;
@@ -1533,6 +1576,7 @@ createApp({
       loadOrders();
     }
     async function confirmSign(){
+      if(phaseOne){ laterStage(); return; }
       if(!s.signForm.no){ ElMessage.warning('请选择待签收运单'); return; }
       if(!s.signForm.code){ ElMessage.warning('请输入签收码'); return; }
       const r = await api.sign(s.signForm.no, {code:s.signForm.code, by:s.signForm.by}).catch(onFail);
@@ -1561,6 +1605,7 @@ createApp({
     /* ---------- 员工：状态更新 / 凭证 / 库存 ---------- */
     function openStatus(task){ s.statusForm = {task:task, status:'transit', note:''}; go('status'); }
     async function saveStatus(){
+      if(phaseOne){ laterStage(); return; }
       const task = s.statusForm.task;
       if(!task) return;
       const r = await api.updateTaskStatus(task.id, {status:s.statusForm.status, note:s.statusForm.note}).catch(onFail);
@@ -1571,6 +1616,7 @@ createApp({
     function openVoucher(task){ s.voucherTask = task; s.voucherFiles = []; s.voucherNote = ''; go('voucher'); }
     function onVoucherFile(file, files){ s.voucherFiles = files; }
     async function saveVoucher(){
+      if(phaseOne){ laterStage(); return; }
       if(!s.voucherTask) return;
       const fd = new FormData();
       fd.append('note', s.voucherNote);
@@ -1585,6 +1631,7 @@ createApp({
     const invIn = computed(function(){ return s.invList.filter(function(r){ return r.type === 'in'; }); });
     const invOut = computed(function(){ return s.invList.filter(function(r){ return r.type === 'out'; }); });
     async function addInv(){
+      if(phaseOne){ laterStage(); return; }
       if(!s.invForm.goods){ ElMessage.warning('请填写物品名称'); return; }
       const r = await api.createInv({type:s.invForm.type, goods:s.invForm.goods, qty:s.invForm.qty, wh:s.invForm.wh}).catch(onFail);
       if(!r) return;
@@ -1596,10 +1643,12 @@ createApp({
 
     /* ---------- 管理员：用户 / 角色 ---------- */
     async function onRoleChange(u){
+      if(phaseOne){ laterStage(); return; }
       const r = await api.updateUserRole(u.id, u.role).catch(onFail);
       if(r) ElMessage.success('已将 ' + u.name + ' 的角色调整为「' + u.role + '」');
     }
     async function batchAssign(){
+      if(phaseOne){ laterStage(); return; }
       const ids = s.userList.filter(function(u){ return u.role === '客户'; }).map(function(u){ return u.id; });
       if(!ids.length){ ElMessage.warning('当前页没有客户角色用户'); return; }
       const r = await api.batchRole(s.batchRole, ids).catch(onFail);
@@ -1624,6 +1673,7 @@ createApp({
 
     /* ---------- 搜索 / 通知 ---------- */
     const doSearchDebounced = debounce(async function(){
+      if(!s.auth.logged || (phaseOne && s.role!=='customer')){ s.searchHits = []; return; }
       if(!s.searchKw){ s.searchHits = []; return; }
       const r = await api.orders({kw:s.searchKw, size:6}).catch(function(){ return null; });
       s.searchHits = r ? r.list : [];
@@ -1685,7 +1735,7 @@ createApp({
       s.auth.logged = true;
       saveSession(s.auth.remember);
       s.role = s.auth.user.role;
-      s.active = { customer:'home', staff:'work', admin:'dash' }[s.role];
+      s.active = initialPage(s.role);
       s.crumbParent = '';
       ElMessage.success((msg || '欢迎回来') + '，' + s.auth.user.name);
       loadAll();
@@ -1730,7 +1780,7 @@ createApp({
         '找回密码', { confirmButtonText:'知道了', dangerouslyUseHTMLString:true });
     }
     function doLogout(quiet){
-      api.logout().catch(function(){});
+      if(!quiet && CONFIG.TOKEN) api.logout().catch(function(){});
       clearSession();
       CONFIG.TOKEN = '';
       s.auth.logged = false;
@@ -1738,6 +1788,7 @@ createApp({
       s.auth.profileVisible = false;
       s.auth.login = { account:'', pwd:'' };
       s.auth.user = { name:'', account:'', role:'customer', loginAt:'' };
+      s.orderList = []; s.orderTotal = 0; s.trackOrder = null; s.trackSel = ''; s.searchHits = [];
       if (!quiet) ElMessage.success('已安全退出登录');
     }
     function logout(){
@@ -1765,13 +1816,13 @@ createApp({
         s.auth.logged = true;
         s.auth.remember = true;
         s.role = s.auth.user.role;
-        s.active = { customer:'home', staff:'work', admin:'dash' }[s.role];
+        s.active = initialPage(s.role);
         loadAll();
         return true;
       } catch(e) { clearSession(); return false; }
     }
 
-    return { s, CONFIG, ElMessage, menus, pageTitle, roleText, go, switchRole,
+    return { s, CONFIG, phaseOne, ElMessage, menus, pageTitle, roleText, go, switchRole,
       loadOrders, loadTasks, loadUsers, loadAll,
       trackOrder, openFeedback, saveFeedback, confirmSign, sendPrice, submitSend, resetSend,
       openStatus, saveStatus, openVoucher, onVoucherFile, saveVoucher,

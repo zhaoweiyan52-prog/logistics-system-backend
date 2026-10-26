@@ -1,0 +1,18 @@
+# Docker activates this profile. Cloud credentials are required, with no localhost fallback.
+server:
+  address: 0.0.0.0
+  forward-headers-strategy: framework
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 3
+      minimum-idle: 0
+      connection-timeout: 3000
+      data-source-properties:
+        sslMode: VERIFY_IDENTITY
+  sql:
+    init:
+      mode: never

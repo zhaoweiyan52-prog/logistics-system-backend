@@ -29,6 +29,10 @@ class CoreApiTest {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     private String username() { return "u" + UUID.randomUUID().toString().replace("-", "").substring(0,12); }
+    @Test void publicDeploymentReadinessChecksRealTablesAndLandingRedirects() throws Exception {
+        mvc.perform(get("/health")).andExpect(status().isOk()).andExpect(content().json("{\"status\":\"UP\"}"));
+        mvc.perform(get("/")).andExpect(status().is3xxRedirection()).andExpect(redirectedUrl("/logistics-admin.html"));
+    }
     private JsonNode postJson(String path, Object body, String token) throws Exception {
         var req = post(path).contentType("application/json").content(json.writeValueAsBytes(body));
         if (token != null) req.header("Authorization","Bearer " + token);

@@ -2,9 +2,21 @@
 
 这是一个 Spring Boot + MySQL 项目，完成注册、登录、退出、创建订单、订单列表和详情。前端接口路径与 JSON 字段保持原约定。签收、反馈、统计、员工任务、库存、用户管理等留给后续阶段，不返回模拟成功数据。
 
-**验证状态：H2（MySQL 兼容模式）测试已通过，20 项自动化测试全部成功；真实 MySQL 和浏览器联调尚待验证。已通过的 HTTP 检查使用 H2，不代表 MySQL 或浏览器联调通过。**
+**验证状态：后端22项自动化测试（H2与部署就绪检查）、前端11项回归检查已通过；本机MySQL 8.0.46已完成10项HTTP检查及重启持久化验证，浏览器客户寄件/查询和员工功能说明页已验证。云端容器、Aiven连接与公网联调尚待验证。**
+
+本机 MySQL 已使用 `F:\MYSQL\Server` 程序目录、`F:\MYSQL\Data` 数据目录和 `MySQL80Logistics` 自动服务。数据库与四张表已建好，**本机不要再次初始化或重复执行建表脚本**。实际配置与验证见 [本机 MySQL 配置记录](docs/本机MySQL配置记录.md)。
+
+当前后端已运行，打开 `http://localhost:8080/logistics-admin.html` 即可访问。以后关闭 Java 后端后，可在项目目录执行下面命令重新启动；脚本读取 F 盘由 Windows 用户加密保护的项目账号凭证，不在仓库保存密码：
+
+```powershell
+& .\scripts\start-mysql-backend.ps1
+```
+
+下面的手动建库步骤供其他电脑首次配置参考。
 
 **先阅读 `docs/接口核对与待确认问题.md`。本机验证的结果和局限见 `docs/验证记录.md`。**
+
+免费公网部署见 [Render + Aiven MySQL说明](docs/免费部署-Render与Aiven.md)。Docker、Free套餐及cloud配置已准备；云端账号、数据库凭证和证书配置完成后才能创建并验证公网网址。
 
 ## 1. 从你已经学过的 Java、MySQL 理解代码
 
@@ -59,7 +71,7 @@ docs/                               接口核对、验证记录
 
 - 项目使用 Spring Boot 3.5.7，编译目标 Java 17；当前已在本机 JDK **24.0.1** 上编译测试。
 - Maven 3.6.3+。本机 PATH 没有 Maven，已下载 **Maven 3.9.11** 到 `.tools/apache-maven-3.9.11`，未修改系统 PATH。
-- MySQL **8.0.16+**，建议使用 MySQL 8.4；本机未在 PATH、常见安装目录、Windows 服务及 3306 监听中发现可用实例。请先安装或连接你自己的 MySQL。
+- MySQL **8.0.16+**；本机已配置 **8.0.46**，程序在 F 盘，服务为 `MySQL80Logistics`，本机端口 3306。其他电脑请先安装或连接自己的 MySQL。
 - `.tools` 和 `.m2` 是本机工具及依赖缓存，已加入 `.gitignore`，不属于源代码。其他组员可自行安装 Maven，然后直接使用 `mvn`。
 
 在 PowerShell 中进入项目目录：
@@ -122,7 +134,15 @@ $env:DB_URL = 'jdbc:mysql://localhost:3306/logistics?useUnicode=true&characterEn
 
 浏览器打开：**http://localhost:8080/logistics-admin.html**。项目内这份页面已设置 `USE_MOCK:false`、`BASE:'/api'`，使用本地 Vue 3.4.38 / Element Plus 2.7.8 文件。原始页面完整保存在 `reference`，未修改外部原文件。
 
-前端首次登录会同时请求下一阶段接口，因此会出现“未在第一阶段实现”的错误提示。注册登录、寄件和“我的订单”对应本阶段真实接口；首页统计和其他菜单尚不完整。不要把首页的零值当成后端统计结果。原页面“演示账号”按钮和角色视角切换仍保留，它们不能赋予后端权限。
+项目页面默认启用 `PHASE_ONE:true`：登录及刷新后只加载已实现的订单接口，下单后不再请求统计。客户首页提供寄件、订单和轨迹入口，不显示尚未实现的统计、签收、反馈和通知；员工/管理员登录后显示功能说明页。真实模式不展示演示账号或角色切换入口，角色以实际登录账号为准。已实现接口的业务失败、HTTP错误及401仍会正常提示。
+
+后续完整后端就绪后，可在页面 CONFIG 中设置 `PHASE_ONE:false` 恢复完整模块界面。`USE_MOCK:true` 的演示模式仍保留完整功能，reference 中的原始页面没有修改。
+
+前端请求回归检查可执行（需要 Node.js）：
+
+```powershell
+node --test .\scripts\test-phase-one-frontend.cjs
+```
 
 不要同时启动 mock-server.js，它默认也占用 8080。也可改端口：
 

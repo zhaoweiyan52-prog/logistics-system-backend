@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: logistics-system-backend
+    runtime: docker
+    plan: free
+    branch: main
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    healthCheckPath: /health
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: cloud
+      - key: DB_URL
+        sync: false
+      - key: DB_USERNAME
+        value: logistics_app
+      - key: DB_PASSWORD
+        sync: false
+# Before the first deployment, add the Aiven CA certificate as secret file ca.pem.
+# Do not add a Render database or disk: this blueprint creates only a Free web service.

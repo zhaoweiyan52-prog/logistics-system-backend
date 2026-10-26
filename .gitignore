@@ -18,6 +18,7 @@ target/
 *.pem
 *.key
 credentials.json
+*.credential.xml
 secrets.json
 application-local.yml
 application-local.yaml
