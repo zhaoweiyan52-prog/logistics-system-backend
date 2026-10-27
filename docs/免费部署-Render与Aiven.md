@@ -1,6 +1,6 @@
 # 免费部署：Render + Aiven MySQL
 
-> 当前站点已上线：https://logistics-system-backend-o7if.onrender.com/ 。数据库连接和带浏览器 Origin 的业务检查已通过，个人云端管理员待启用，详见 [云端验证记录](云端部署验证记录.md)。下文是最初部署步骤，初始“未验证”状态以新记录为准。
+> 当前站点已上线：https://logistics-system-backend-o7if.onrender.com/ 。数据库连接和带浏览器 Origin 的业务检查已通过，个人云端管理员 betswj 已启用并验证，详见 [云端验证记录](云端部署验证记录.md)。下文是最初部署步骤，初始“未验证”状态以新记录为准。
 
 网页和Spring Boot运行在同一个Render Free Web Service，数据库使用Aiven Free MySQL。云端是新库，不上传F盘数据、账号或Windows加密凭证。
 
