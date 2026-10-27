@@ -1,12 +1,14 @@
-# 物流管理系统：第一阶段真实后端
+# 物流管理系统：Spring Boot + MySQL 后端
 
-这是一个 Spring Boot + MySQL 项目，完成注册、登录、退出、创建订单、订单列表和详情。前端接口路径与 JSON 字段保持原约定。签收、反馈、统计、员工任务、库存、用户管理等留给后续阶段，不返回模拟成功数据。
+这是一个 Spring Boot + MySQL 项目，现已接通组员页面约定的全部 21 个接口：客户寄件、订单、签收反馈；员工任务、凭证、库存；管理员用户角色、统计报表。另增加用户启停、系统设置的 3 个接口，将原页面仅在浏览器修改的操作真正保存到数据库。原有路径和字段保留。
 
-**验证状态：后端22项自动化测试（H2与部署就绪检查）、前端11项回归检查已通过；本机MySQL 8.0.46已完成10项HTTP检查及重启持久化验证，浏览器客户寄件/查询和员工功能说明页已验证。云端容器、Aiven连接与公网联调尚待验证。**
+**验证状态：H2 测试已通过（35 项）；真实 MySQL 8.0.46 的测试与增量升级检查已通过，前端 15 项回归检查通过。浏览器已验证管理员页面、设置刷新保留、员工揽收与下一任务生成。Docker、Aiven TLS 和公网整站联调尚待验证。**
 
-本机 MySQL 已使用 `F:\MYSQL\Server` 程序目录、`F:\MYSQL\Data` 数据目录和 `MySQL80Logistics` 自动服务。数据库与四张表已建好，**本机不要再次初始化或重复执行建表脚本**。实际配置与验证见 [本机 MySQL 配置记录](docs/本机MySQL配置记录.md)。
+**已有第一阶段数据库必须先执行增量升级，再启动新版。管理员首次启用、24 个接口、权限和业务边界见 [全功能对接与升级](docs/全功能对接与升级.md)。**
 
-当前后端已运行，打开 `http://localhost:8080/logistics-admin.html` 即可访问。以后关闭 Java 后端后，可在项目目录执行下面命令重新启动；脚本读取 F 盘由 Windows 用户加密保护的项目账号凭证，不在仓库保存密码：
+本机 MySQL 使用 `F:\MYSQL\Server` 程序目录、`F:\MYSQL\Data` 数据目录和 `MySQL80Logistics` 服务。已有第一阶段四张表，在 Workbench 中选择 logistics 后执行 **`sql/03-full-features.sql`**，增加九张表并保留旧数据；不要重新初始化数据目录。全新数据库执行 01、02 即可。
+
+升级、打包并启动后，打开 `http://localhost:8080/logistics-admin.html` 即可访问。可在项目目录执行下面命令启动；脚本读取 F 盘由 Windows 用户加密保护的项目账号凭证，不在仓库保存密码：
 
 ```powershell
 & .\scripts\start-mysql-backend.ps1
@@ -52,6 +54,7 @@ src/main/java/com/example/logistics/
   api/                               统一返回体、中文错误处理
   auth/                              注册登录、密码哈希、token 校验
   order/                             订单接口、字段校验、SQL 与归属检查
+  operations/                        员工任务、库存、管理员、报表、首位管理员初始化
   config/                            本地跨域配置
 src/main/resources/application.yml   MySQL 配置（密码从环境变量读取）
 src/main/resources/schema.sql        表结构源文件，正式启动不自动执行
@@ -59,6 +62,7 @@ src/main/resources/static/           真实接口模式的前端副本和本地�
 src/test/                           H2 测试，H2 不打进正式 jar
 sql/01-create-database.sql           建库 SQL
 sql/02-schema.sql                    可直接在 MySQL 执行的建表 SQL
+sql/03-full-features.sql             第一阶段旧库的增量升级，不删除原有数据
 scripts/mvn.ps1                      优先使用本项目便携 Maven
 scripts/verify-api.ps1               对运行中的后端执行 HTTP 验证
 reference/                          原始页面、接口文档、mock 服务器
@@ -189,11 +193,11 @@ SELECT order_no, event_time, txt, done FROM order_traces ORDER BY id DESC LIMIT 
 | POST | `/auth/logout` | 必须有 token，返回 `{ok:true}` |
 | POST | `/orders` | `{receiver,dest,goods,weight,fee}`，返回 Order |
 | GET | `/orders` | `kw/status/page/size`，返回 `{list,total}` |
-| GET | `/orders/{no}` | 返回本人的 Order，含 traces、fb |
+| GET | `/orders/{no}` | 客户返回本人 Order，员工/管理员可查全局，含 traces、fb |
 
-订单列表按下单时间倒序，同时间用运单号稳定排序；`kw` 按原页面和 mock 搜索运单号/物品；`page` 默认 1，`size` 默认 10、最大 100，`total` 是筛选后总数。不存在与非本人订单返回同一中文错误，不泄露订单是否属于其他人。
+上表为原核心接口，新增模块的完整清单见 [全功能接口与权限](docs/全功能对接与升级.md)。订单列表按下单时间倒序，同时间用运单号稳定排序；`kw` 搜索运单号/物品；`page` 默认 1，`size` 默认 10、最大 100。客户不存在与非本人订单返回同一错误。
 
-订单号格式为 `SF + UTC日期8位 + UUID十六进制32位`，共 42 位；数据库主键约束确保不能保存重复运单号。服务端设定 `pending`、当前时间、预计三天后送达和初始轨迹。时间以 ISO 8601 字符串返回，重量、运费为 JSON number。第一阶段 `fb:null`。
+订单号格式为 `SF + UTC日期8位 + UUID十六进制32位`，共 42 位；数据库主键保证唯一。下单初始 pending、预计三天后送达，并生成真实轨迹和揽收任务。时间是 ISO 8601，重量和运费为 JSON number；fb 在无反馈时为 null，提交后为真实 Feedback。
 
 ## 8. 打包与交给组员
 

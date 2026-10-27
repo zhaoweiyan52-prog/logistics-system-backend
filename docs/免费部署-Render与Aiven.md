@@ -22,6 +22,8 @@
 2. `USE logistics;`。
 3. `sql/02-schema.sql`，仅一次，避免重复创建索引。
 
+如果云端已经运行过第一阶段四表版，只需选择 logistics 后执行 `sql/03-full-features.sql`；首位管理员的启用见 [全功能升级说明](全功能对接与升级.md)。
+
 然后在本机SQL编辑器创建应用账号。下面密码是占位符，执行前必须本机替换；不把真实密码保存到Git：
 
 ```sql
@@ -67,7 +69,7 @@ https://你的域名.onrender.com/
 https://你的域名.onrender.com/health
 ```
 
-根路径会跳转到物流页面。health正常返回 `{"status":"UP"}`；数据库或四张表不可用时返回HTTP503和DOWN，不泄露数据库详情。
+根路径会跳转到物流页面。health正常返回 `{"status":"UP"}`；数据库或任一必需表不可用时返回HTTP503和DOWN，不泄露数据库详情。
 
 注册客户 → 创建订单 → 查询 → 退出重登 → 另一个客户看不到该订单。云端没有本机账号，需要重新注册。
 
@@ -77,7 +79,7 @@ https://你的域名.onrender.com/health
 
 Render免费Web服务15分钟无访问会休眠，再次唤醒可能约一分钟；Aiven Free有存储和活跃度限制。按平台当前免费额度使用，不添加付费资源。参考 [Render Free](https://render.com/docs/free) 和 [Aiven Free](https://aiven.io/docs/products/mysql/concepts/mysql-free-tier)。
 
-已通过本机22项后端测试、11项前端回归检查、Java打包和启动脚本语法检查。本机没有Docker，尚未运行docker build/run。Aiven TLS连接、Render镜像构建、在线健康检查与公网浏览器联调必须等云端账号及资源就绪后验证。
+当前本机验证结果见 README 和全功能升级说明。本机没有Docker，尚未运行docker build/run。Aiven TLS连接、Render镜像构建、在线健康检查与公网浏览器联调尚待验证。
 
 遇到证书错误先核对CA和Aiven域名，不关闭验证；Access denied核对云端账号密码；health DOWN核对表结构；连接超时核对Host/Port、云端服务状态及访问控制。不要把本机F盘路径填入Render。
 

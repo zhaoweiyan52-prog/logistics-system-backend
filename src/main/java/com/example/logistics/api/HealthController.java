@@ -16,7 +16,9 @@ public class HealthController {
     public ResponseEntity<Map<String,String>> health() {
         try {
             // Check readiness without exposing user data or assuming tables contain rows.
-            for (String table : new String[]{"app_users","auth_tokens","logistics_orders","order_traces"}) {
+            for (String table : new String[]{"app_users","auth_tokens","logistics_orders","order_traces",
+                    "user_access","order_feedback","logistics_tasks","task_vouchers","warehouses",
+                    "warehouse_stock","inventory_records","system_settings","notifications"}) {
                 jdbc.queryForList("SELECT 1 FROM " + table + " LIMIT 1");
             }
             return ResponseEntity.ok(Map.of("status", "UP"));

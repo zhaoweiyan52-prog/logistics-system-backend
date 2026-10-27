@@ -8,6 +8,9 @@ const test = require('node:test');
 const html = fs.readFileSync(path.join(__dirname, '../src/main/resources/static/logistics-admin.html'), 'utf8');
 const source = [...html.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/g)].map(m => m[1]).join('\n');
 const settle = () => new Promise(resolve => setImmediate(resolve));
+test('in-DOM Vue components use explicit end tags so table columns do not become nested',()=>{
+  assert.doesNotMatch(html, /<el-[\w-]+\b(?:"[^"]*"|'[^']*'|[^'">])*\/>/);
+});
 
 async function boot({ role='customer', restore=true, expired=false, orderError=false, mock=false, full=false }={}) {
   let view;
@@ -30,7 +33,7 @@ async function boot({ role='customer', restore=true, expired=false, orderError=f
       createApp:options=>({use(){return this;},mount(){view=options.setup();mounted.forEach(callback=>callback());}})},
     ElementPlus:{ElMessage:message,ElMessageBox:{confirm:()=>Promise.resolve(),alert:()=>Promise.resolve()}},
     fetch:async (url,options={})=>{
-      const method=options.method||'GET'; requests.push({url,method});
+      const method=options.method||'GET'; requests.push({url,method,body:options.body});
       const pathname=url.split('?')[0];
       if (expired && pathname==='/api/orders') return {status:401,ok:false,json:async()=>({})};
       if (orderError && pathname==='/api/orders') return {status:200,ok:true,json:async()=>({code:50001,message:'Database unavailable'})};
@@ -40,6 +43,8 @@ async function boot({ role='customer', restore=true, expired=false, orderError=f
       else if (pathname==='/api/orders') data=method==='POST'?sample:{list:[sample],total:1};
       else if (pathname==='/api/orders/SF_TEST_ORDER') data=sample;
       else if (pathname==='/api/stats/overview') data={total:1};
+      else if (pathname==='/api/settings') data={name:'测试物流',phone:'400-800-1234',notice:'',first:1,firstFee:12,addFee:4,signNtf:true,excNtf:true,mktNtf:false};
+      else if (/\/api\/users\/\d+\/(active|role)$/.test(pathname)) data={ok:true};
       else if (pathname==='/api/tasks' || pathname==='/api/users') data={list:[],total:0};
       else data=[];
       return {status:200,ok:true,json:async()=>({code:0,data,message:'OK'})};
@@ -47,7 +52,7 @@ async function boot({ role='customer', restore=true, expired=false, orderError=f
   });
   let script=source;
   if (mock) script=script.replace('USE_MOCK: false,','USE_MOCK: true,');
-  if (full) script=script.replace('PHASE_ONE: true,','PHASE_ONE: false,');
+  if (!full) script=script.replace('PHASE_ONE: false,','PHASE_ONE: true,');
   vm.runInContext(script,context,{filename:'logistics-admin.inline.js'});
   await settle(); await settle();
   return {view,requests,messages,watchers};
@@ -140,10 +145,24 @@ test('mock mode retains the full demo and does not call HTTP',async()=>{
   assert.equal(requests.length,0);
 });
 
-test('full-backend switch preserves the existing module-loading behavior',async()=>{
-  const {view,requests}=await boot({full:true});
-  assert.equal(view.phaseOne,false);
-  for (const pathname of ['/api/stats/overview','/api/stats/weekly','/api/stats/monthly','/api/tasks','/api/users','/api/inventory','/api/warehouses','/api/notifications']) {
-    assert.ok(requests.some(r=>r.url.split('?')[0]===pathname),`Missing full-mode request ${pathname}`);
-  }
+for(const role of ['customer','staff','admin']) {
+  test(`full backend ${role}: loads allowed modules and cannot switch identity`,async()=>{
+    const {view,requests,messages}=await boot({full:true,role});
+    assert.equal(view.phaseOne,false);
+    assert.equal(view.s.active,{customer:'home',staff:'work',admin:'dash'}[role]);
+    const allowed=['/api/settings','/api/stats/overview','/api/stats/weekly','/api/notifications',
+      ...({customer:['/api/orders'],staff:['/api/tasks','/api/inventory','/api/warehouses'],admin:['/api/orders','/api/users','/api/stats/monthly']})[role]];
+    for(const r of requests) assert.ok(allowed.includes(r.url.split('?')[0]),`Unexpected ${role} request ${r.url}`);
+    for(const path of allowed) assert.ok(requests.some(r=>r.url.split('?')[0]===path),`Missing ${path}`);
+    view.switchRole(role==='admin'?'customer':'admin');
+    assert.equal(view.s.role,role);
+    assert.equal(messages.filter(m=>m.level==='error').length,0);
+  });
+}
+test('admin settings and enable/disable buttons send real persistence requests',async()=>{
+  const {view,requests}=await boot({full:true,role:'admin'});
+  view.s.setForm.name='新物流名称';await view.saveSettings();
+  await view.toggleUserActive({id:42,account:'another_user',active:true});
+  assert.ok(requests.some(r=>r.url==='/api/settings'&&r.method==='PUT'&&JSON.parse(r.body).name==='新物流名称'));
+  assert.ok(requests.some(r=>r.url==='/api/users/42/active'&&r.method==='PATCH'&&JSON.parse(r.body).active===false));
 });

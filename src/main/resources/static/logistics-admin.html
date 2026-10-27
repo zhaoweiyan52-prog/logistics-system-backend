@@ -205,12 +205,12 @@
             <div class="ab-item"><span class="ab-ico">🏭</span>智能仓储调度，六仓容量动态预警</div>
             <div class="ab-item"><span class="ab-ico">🔐</span>三权分立角色体系，数据按角色隔离</div>
           </div>
-          <div class="ab-stats">
+          <div class="ab-stats" v-if="CONFIG.USE_MOCK">
             <div class="ab-stat"><b>1,286</b><span>服务网点</span></div>
             <div class="ab-stat"><b>8.6万</b><span>日均运单</span></div>
             <div class="ab-stat"><b>98.7%</b><span>准时送达率</span></div>
           </div>
-          <div class="ab-foot">© 2026 物流管理系统 · 沪 ICP 备 2026000000 号</div>
+          <div class="ab-foot">© 2026 物流管理系统 · 小组课程项目</div>
         </div>
       </div>
       <!-- 表单区 -->
@@ -303,7 +303,7 @@
     <div class="tag-mock" v-if="CONFIG.USE_MOCK" title="当前使用内置演示数据">MOCK 数据</div>
     <div class="logo">
       <div class="logo-icon">🚚</div>
-      <div class="logo-name">物流管理系统</div>
+      <div class="logo-name">{{ s.setForm.name }}</div>
     </div>
     <div class="top-search" v-if="!phaseOne || s.role==='customer'">
       <el-input v-model="s.searchKw" placeholder="搜索运单号 / 物品" clearable
@@ -318,7 +318,7 @@
       </div>
     </div>
     <div class="top-right">
-      <el-dropdown v-if="!phaseOne" @command="switchRole" trigger="click">
+      <el-dropdown v-if="CONFIG.USE_MOCK" @command="switchRole" trigger="click">
         <span class="role-tag">{{ roleText }} ▾</span>
         <template #dropdown>
           <el-dropdown-menu>
@@ -380,6 +380,7 @@
       <span class="cur">{{ pageTitle }}</span>
     </div>
     <div class="page-title">{{ pageTitle }}</div>
+    <el-alert v-if="s.auth.logged && s.setForm.notice && !phaseOne" :title="s.setForm.notice" type="info" :closable="false" style="margin-bottom:16px"></el-alert>
 
     <el-alert v-if="phaseOne" type="info" :closable="false" show-icon style="margin-bottom:18px"
       title="第一阶段功能" description="现已开放客户寄件、订单查询和轨迹查看；签收、反馈、统计及员工管理功能将在后续阶段开放。"></el-alert>
@@ -407,7 +408,7 @@
         <div class="stat-card clickable" @click="go('orders')">
           <div class="stat-label">累计寄件</div>
           <div class="stat-value">{{ s.stats.total || 0 }}</div>
-          <div class="stat-sub">近半年订单总数</div>
+          <div class="stat-sub">本人累计订单总数</div>
         </div>
         <div class="stat-card clickable" @click="go('track')">
           <div class="stat-label">在途包裹</div>
@@ -422,7 +423,7 @@
         <div class="stat-card">
           <div class="stat-label">累计运费</div>
           <div class="stat-value">¥{{ (s.stats.revenue||0).toFixed(0) }}</div>
-          <div class="stat-sub">金牌客户 · 享 92 折</div>
+          <div class="stat-sub">不含已取消运单</div>
         </div>
       </div>
       <div class="card">
@@ -433,7 +434,7 @@
           <el-table-column label="运单号" min-width="170">
             <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
           </el-table-column>
-          <el-table-column label="物品" prop="goods" min-width="130" />
+          <el-table-column label="物品" prop="goods" min-width="130" ></el-table-column>
           <el-table-column label="预计送达" width="150">
             <template #default="{row}"><span class="cell-sub">{{ fmt(row.eta) }}</span></template>
           </el-table-column>
@@ -459,15 +460,15 @@
       <div class="card" style="max-width:640px">
         <div class="card-title">在线下单</div>
         <el-form label-width="90px">
-          <el-form-item label="收件人"><el-input v-model="s.sendForm.to" placeholder="收件人姓名" /></el-form-item>
-          <el-form-item label="收件地址"><el-input v-model="s.sendForm.dest" placeholder="省市区 + 详细地址" /></el-form-item>
+          <el-form-item label="收件人"><el-input v-model="s.sendForm.to" placeholder="收件人姓名" ></el-input></el-form-item>
+          <el-form-item label="收件地址"><el-input v-model="s.sendForm.dest" placeholder="省市区 + 详细地址" ></el-input></el-form-item>
           <el-form-item label="物品类型">
             <el-select v-model="s.sendForm.goods" style="width:100%">
-              <el-option v-for="g in goodsList" :key="g" :label="g" :value="g" />
+              <el-option v-for="g in goodsList" :key="g" :label="g" :value="g" ></el-option>
             </el-select>
           </el-form-item>
           <el-form-item label="重量">
-            <el-input-number v-model="s.sendForm.weight" :min="0.5" :max="50" :step="0.5" /> kg
+            <el-input-number v-model="s.sendForm.weight" :min="0.5" :max="50" :step="0.5" ></el-input-number> kg
           </el-form-item>
           <el-form-item label="预估运费">
             <span style="font-size:20px;font-weight:700;color:#2563eb">¥{{ sendPrice.toFixed(2) }}</span>
@@ -489,7 +490,7 @@
           <el-select v-model="s.trackSel" style="width:100%;margin-bottom:18px"
             placeholder="选择运单号">
             <el-option v-for="o in orders" :key="o.no" :value="o.no"
-              :label="o.no + ' · ' + o.goods + ' · ' + stText(o.status)" />
+              :label="o.no + ' · ' + o.goods + ' · ' + stText(o.status)" ></el-option>
           </el-select>
           <div v-if="s.trackOrder">
             <div style="display:flex;justify-content:space-between;margin-bottom:16px">
@@ -501,7 +502,7 @@
             </div>
             <div style="margin-bottom:14px" v-if="!phaseOne && s.trackOrder.status==='delivering'">
               <el-alert type="warning" :closable="false" show-icon
-                title="包裹正在派送，请留意签收码" :description="'签收码：' + s.trackOrder.signCode" />
+                title="包裹正在派送，请留意签收码" :description="'签收码：' + s.trackOrder.signCode" ></el-alert>
             </div>
             <div v-for="(t,i) in s.trackOrder.traces" :key="i" class="trace-item">
               <div class="trace-line">
@@ -514,18 +515,18 @@
               </div>
             </div>
           </div>
-          <el-empty v-else description="请选择运单查看轨迹" />
+          <el-empty v-else description="请选择运单查看轨迹" ></el-empty>
         </div>
         <div class="card" v-if="!phaseOne">
           <div class="card-title">签收确认</div>
           <el-form label-width="70px">
             <el-form-item label="运单">
               <el-select v-model="s.signForm.no" style="width:100%" placeholder="选择待签收运单">
-                <el-option v-for="o in s.signableList" :key="o.no" :label="o.no + ' · ' + o.goods" :value="o.no" />
+                <el-option v-for="o in s.signableList" :key="o.no" :label="o.no + ' · ' + o.goods" :value="o.no" ></el-option>
               </el-select>
             </el-form-item>
             <el-form-item label="签收码">
-              <el-input v-model="s.signForm.code" placeholder="快递员提供的签收码" maxlength="4" />
+              <el-input v-model="s.signForm.code" placeholder="快递员提供的签收码" maxlength="4" ></el-input>
             </el-form-item>
             <el-form-item label="签收人">
               <el-radio-group v-model="s.signForm.by">
@@ -551,7 +552,7 @@
             <template #prefix>🔍</template>
           </el-input>
           <el-select v-model="s.orderFilter" style="width:150px" placeholder="全部状态" clearable>
-            <el-option v-for="st in statusList" :key="st.v" :label="st.t" :value="st.v" />
+            <el-option v-for="st in statusList" :key="st.v" :label="st.t" :value="st.v" ></el-option>
           </el-select>
           <el-button @click="resetOrderFilter">重置</el-button>
           <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">
@@ -597,7 +598,7 @@
         </el-table>
         <div class="pager">
           <el-pagination background layout="total, sizes, prev, pager, next" :total="s.orderTotal"
-            v-model:current-page="s.orderPage" :page-size="s.orderSize" :page-sizes="[10,20,50]" />
+            v-model:current-page="s.orderPage" :page-size="s.orderSize" :page-sizes="[10,20,50]" ></el-pagination>
         </div>
       </div>
     </template>
@@ -605,13 +606,16 @@
     <!-- ============ 员工：工作台 ============ -->
     <template v-if="s.active==='work' && s.role==='staff'">
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">今日待办</div><div class="stat-value">{{ s.taskTotal }}</div><div class="stat-sub">揽收 + 派送任务</div></div>
-        <div class="stat-card"><div class="stat-label">已完成</div><div class="stat-value">{{ s.stats.tasksDone || 0 }}</div><div class="stat-sub">近 7 天累计</div></div>
+        <div class="stat-card"><div class="stat-label">当前待办</div><div class="stat-value">{{ s.taskTotal }}</div><div class="stat-sub">员工共用任务池</div></div>
+        <div class="stat-card"><div class="stat-label">已完成</div><div class="stat-value">{{ s.stats.tasksDone || 0 }}</div><div class="stat-sub">累计完成的流程任务</div></div>
         <div class="stat-card"><div class="stat-label">凭证待上传</div><div class="stat-value">{{ s.stats.noVoucher || 0 }}</div><div class="stat-sub">签收后需回传凭证</div></div>
-        <div class="stat-card"><div class="stat-label">本月派件</div><div class="stat-value">{{ s.stats.monthDeliver || 0 }}</div><div class="stat-sub">完成率 96.2%</div></div>
+        <div class="stat-card"><div class="stat-label">本月派件</div><div class="stat-value">{{ s.stats.monthDeliver || 0 }}</div><div class="stat-sub">本月下单且派送中或已签收</div></div>
       </div>
       <div class="card">
         <div class="card-title">待办任务</div>
+        <el-select v-model="s.taskFilter" style="width:160px;margin-bottom:12px">
+          <el-option label="待处理" value="todo" ></el-option><el-option label="已完成" value="done" ></el-option><el-option label="全部任务" value="" ></el-option>
+        </el-select>
         <el-table :data="s.taskList" v-loading="s.loading">
           <el-table-column label="运单号" min-width="170">
             <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
@@ -619,7 +623,7 @@
           <el-table-column label="任务类型" width="100">
             <template #default="{row}"><el-tag size="small" :type="row.type==='上门揽收'?'warning':'primary'">{{ row.type }}</el-tag></template>
           </el-table-column>
-          <el-table-column label="地址" prop="addr" min-width="180" />
+          <el-table-column label="地址" prop="addr" min-width="180" ></el-table-column>
           <el-table-column label="时间" width="150">
             <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
           </el-table-column>
@@ -632,15 +636,18 @@
             <template #default="{row}">
               <template v-if="row.status==='todo'">
                 <el-button size="small" type="primary" @click="openStatus(row)">状态更新</el-button>
-                <el-button size="small" @click="openVoucher(row)">上传凭证</el-button>
+                <el-button v-if="CONFIG.USE_MOCK || (row.type==='派送' && ['delivering','delivered'].includes(row.orderStatus))" size="small" @click="openVoucher(row)">上传凭证</el-button>
               </template>
-              <span v-else class="cell-sub">已完成{{ row.voucher ? ' · 有凭证' : '' }}</span>
+              <template v-else>
+                <span class="cell-sub">已完成{{ row.voucher ? ' · 有凭证' : '' }}</span>
+                <el-button v-if="!row.voucher && row.type==='派送' && row.orderStatus==='delivered'" size="small" @click="openVoucher(row)">补传凭证</el-button>
+              </template>
             </template>
           </el-table-column>
         </el-table>
         <div class="pager">
           <el-pagination background layout="total, prev, pager, next" :total="s.taskTotal"
-            v-model:current-page="s.taskPage" :page-size="10" />
+            v-model:current-page="s.taskPage" :page-size="10" ></el-pagination>
         </div>
       </div>
     </template>
@@ -655,13 +662,10 @@
         <el-form label-width="90px">
           <el-form-item label="最新状态">
             <el-select v-model="s.statusForm.status" style="width:100%">
-              <el-option label="已取件，运输中" value="transit" />
-              <el-option label="派送中" value="delivering" />
-              <el-option label="已签收" value="delivered" />
-              <el-option label="异常上报" value="exception" />
+              <el-option v-for="st in statusOptions" :key="st" :label="stText(st)" :value="st" ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="备注"><el-input v-model="s.statusForm.note" type="textarea" :rows="3" placeholder="选填" /></el-form-item>
+          <el-form-item label="备注"><el-input v-model="s.statusForm.note" type="textarea" :rows="3" placeholder="选填" ></el-input></el-form-item>
           <el-form-item>
             <el-button type="primary" @click="saveStatus">保存并完成任务</el-button>
           </el-form-item>
@@ -683,7 +687,7 @@
               <div style="padding:14px 30px">📥 将图片拖到此处，或<em>点击上传</em></div>
             </el-upload>
           </el-form-item>
-          <el-form-item label="签收说明"><el-input v-model="s.voucherNote" type="textarea" :rows="2" placeholder="如：已由本人签收，外包装完好" /></el-form-item>
+          <el-form-item label="签收说明"><el-input v-model="s.voucherNote" type="textarea" :rows="2" placeholder="如：已由本人签收，外包装完好" ></el-input></el-form-item>
           <el-form-item>
             <el-button type="primary" :disabled="!s.voucherFiles.length" @click="saveVoucher">提交凭证</el-button>
           </el-form-item>
@@ -700,11 +704,11 @@
               <el-button type="primary" size="small" @click="s.invForm={type:'in',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">+ 新建入库</el-button>
             </div>
             <el-table :data="invIn" v-loading="s.loading">
-              <el-table-column label="单号" prop="no" min-width="140" />
-              <el-table-column label="物品" prop="goods" min-width="140" />
-              <el-table-column label="数量" prop="qty" width="80" />
-              <el-table-column label="仓库" prop="wh" width="130" />
-              <el-table-column label="操作员" prop="op" width="100" />
+              <el-table-column label="单号" prop="no" min-width="140" ></el-table-column>
+              <el-table-column label="物品" prop="goods" min-width="140" ></el-table-column>
+              <el-table-column label="数量" prop="qty" width="80" ></el-table-column>
+              <el-table-column label="仓库" prop="wh" width="130" ></el-table-column>
+              <el-table-column label="操作员" prop="op" width="100" ></el-table-column>
               <el-table-column label="时间" width="150">
                 <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
               </el-table-column>
@@ -715,11 +719,11 @@
               <el-button type="primary" size="small" @click="s.invForm={type:'out',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">+ 新建出库</el-button>
             </div>
             <el-table :data="invOut" v-loading="s.loading">
-              <el-table-column label="单号" prop="no" min-width="140" />
-              <el-table-column label="物品" prop="goods" min-width="140" />
-              <el-table-column label="数量" prop="qty" width="80" />
-              <el-table-column label="仓库" prop="wh" width="130" />
-              <el-table-column label="操作员" prop="op" width="100" />
+              <el-table-column label="单号" prop="no" min-width="140" ></el-table-column>
+              <el-table-column label="物品" prop="goods" min-width="140" ></el-table-column>
+              <el-table-column label="数量" prop="qty" width="80" ></el-table-column>
+              <el-table-column label="仓库" prop="wh" width="130" ></el-table-column>
+              <el-table-column label="操作员" prop="op" width="100" ></el-table-column>
               <el-table-column label="时间" width="150">
                 <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
               </el-table-column>
@@ -736,7 +740,7 @@
         <div class="cap-row" v-for="w in s.warehouses" :key="w.name">
           <span class="cap-name">{{ w.name }}</span>
           <div class="cap-bar"><div class="cap-fill" :style="{width:(w.used/w.cap*100).toFixed(1)+'%',background: w.used/w.cap>0.85?'#ef4444':'#2563eb'}"></div></div>
-          <span class="cap-num">{{ w.used }} / {{ w.cap }} 托</span>
+          <span class="cap-num">{{ w.used }} / {{ w.cap }}</span>
         </div>
       </div>
       <div class="card">
@@ -754,7 +758,7 @@
     <!-- ============ 管理员：仪表盘 ============ -->
     <template v-if="s.active==='dash' && s.role==='admin'">
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">累计运单</div><div class="stat-value">{{ s.stats.total || 0 }}</div><div class="stat-sub">近 180 天</div></div>
+        <div class="stat-card"><div class="stat-label">累计运单</div><div class="stat-value">{{ s.stats.total || 0 }}</div><div class="stat-sub">全部历史订单</div></div>
         <div class="stat-card"><div class="stat-label">已签收</div><div class="stat-value">{{ s.stats.delivered || 0 }}</div><div class="stat-sub">签收率 {{ s.stats.total ? (s.stats.delivered/s.stats.total*100).toFixed(1) : 0 }}%</div></div>
         <div class="stat-card"><div class="stat-label">累计营收</div><div class="stat-value">¥{{ (s.stats.revenue||0).toFixed(0) }}</div><div class="stat-sub">不含已取消运单</div></div>
         <div class="stat-card"><div class="stat-label">异常运单</div><div class="stat-value">{{ s.stats.exception || 0 }}</div><div class="stat-sub">待处理理赔</div></div>
@@ -792,9 +796,9 @@
     <template v-if="s.active==='users' && s.role==='admin'">
       <div class="card">
         <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-          <el-input v-model="s.userKw" placeholder="搜索姓名 / 账号" style="width:220px" clearable />
+          <el-input v-model="s.userKw" placeholder="搜索姓名 / 账号" style="width:220px" clearable ></el-input>
           <el-select v-model="s.userRoleFilter" style="width:150px" placeholder="全部角色" clearable>
-            <el-option label="客户" value="客户" /><el-option label="物流员工" value="物流员工" /><el-option label="系统管理员" value="系统管理员" />
+            <el-option label="客户" value="客户" ></el-option><el-option label="物流员工" value="物流员工" ></el-option><el-option label="系统管理员" value="系统管理员" ></el-option>
           </el-select>
           <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">共 {{ s.userTotal }} 位用户</span>
         </div>
@@ -808,7 +812,7 @@
           <el-table-column label="角色分配" width="160">
             <template #default="{row}">
               <el-select v-model="row.role" size="small" @change="onRoleChange(row)">
-                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" />
+                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" ></el-option>
               </el-select>
             </template>
           </el-table-column>
@@ -817,13 +821,13 @@
               <el-tag size="small" :type="row.active?'success':'danger'">{{ row.active?'正常':'已禁用' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="运单数" prop="orderCount" width="90" />
+          <el-table-column label="运单数" prop="orderCount" width="90" ></el-table-column>
           <el-table-column label="注册时间" width="150">
             <template #default="{row}"><span class="cell-sub">{{ fmtDate(row.created) }}</span></template>
           </el-table-column>
           <el-table-column label="操作" width="120" fixed="right">
             <template #default="{row}">
-              <el-button link :type="row.active?'danger':'primary'" size="small" @click="row.active=!row.active">
+              <el-button link :type="row.active?'danger':'primary'" size="small" @click="toggleUserActive(row)">
                 {{ row.active?'禁用':'启用' }}
               </el-button>
             </template>
@@ -831,7 +835,7 @@
         </el-table>
         <div class="pager">
           <el-pagination background layout="total, prev, pager, next" :total="s.userTotal"
-            v-model:current-page="s.userPage" :page-size="10" />
+            v-model:current-page="s.userPage" :page-size="10" ></el-pagination>
         </div>
       </div>
       <div class="card">
@@ -839,14 +843,14 @@
           <el-collapse-item title="批量角色分配" name="batch">
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
               <el-select v-model="s.batchRole" placeholder="选择角色" style="width:160px">
-                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" />
+                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" ></el-option>
               </el-select>
-              <el-button type="primary" :disabled="!s.batchRole" @click="batchAssign">应用到全部客户筛选结果</el-button>
+              <el-button type="primary" :disabled="!s.batchRole" @click="batchAssign">应用到当前页客户</el-button>
             </div>
           </el-collapse-item>
           <el-collapse-item title="角色权限矩阵" name="matrix">
             <el-table :data="permMatrix" size="small">
-              <el-table-column prop="mod" label="功能模块" min-width="140" />
+              <el-table-column prop="mod" label="功能模块" min-width="140" ></el-table-column>
               <el-table-column prop="c" label="客户" width="100"><template #default="{row}"><span>{{ row.c?'✅':'—' }}</span></template></el-table-column>
               <el-table-column prop="s" label="物流员工" width="100"><template #default="{row}"><span>{{ row.s?'✅':'—' }}</span></template></el-table-column>
               <el-table-column prop="a" label="系统管理员" width="110"><template #default="{row}"><span>{{ row.a?'✅':'—' }}</span></template></el-table-column>
@@ -861,10 +865,10 @@
       <div class="card">
         <div class="card-title">月度运营报表</div>
         <el-table :data="s.monthList" show-summary :summary-method="sumReport" v-loading="s.loading">
-          <el-table-column prop="month" label="月份" width="120" />
-          <el-table-column prop="count" label="运单量" width="110" />
-          <el-table-column prop="delivered" label="已签收" width="110" />
-          <el-table-column prop="exception" label="异常件" width="100" />
+          <el-table-column prop="month" label="月份" width="120" ></el-table-column>
+          <el-table-column prop="count" label="运单量" width="110" ></el-table-column>
+          <el-table-column prop="delivered" label="已签收" width="110" ></el-table-column>
+          <el-table-column prop="exception" label="异常件" width="100" ></el-table-column>
           <el-table-column prop="fee" label="营收 (¥)" min-width="120">
             <template #default="{row}">{{ row.fee.toFixed(2) }}</template>
           </el-table-column>
@@ -888,27 +892,27 @@
         <el-tabs v-model="s.setTab">
           <el-tab-pane label="基础设置" name="base">
             <el-form label-width="110px">
-              <el-form-item label="系统名称"><el-input v-model="s.setForm.name" /></el-form-item>
-              <el-form-item label="客服电话"><el-input v-model="s.setForm.phone" /></el-form-item>
-              <el-form-item label="公告"><el-input v-model="s.setForm.notice" type="textarea" :rows="2" /></el-form-item>
+              <el-form-item label="系统名称"><el-input v-model="s.setForm.name" ></el-input></el-form-item>
+              <el-form-item label="客服电话"><el-input v-model="s.setForm.phone" ></el-input></el-form-item>
+              <el-form-item label="公告"><el-input v-model="s.setForm.notice" type="textarea" :rows="2" ></el-input></el-form-item>
             </el-form>
           </el-tab-pane>
           <el-tab-pane label="运费规则" name="fee">
             <el-form label-width="110px">
-              <el-form-item label="首重 (kg)"><el-input-number v-model="s.setForm.first" :min="1" /></el-form-item>
-              <el-form-item label="首重费 (¥)"><el-input-number v-model="s.setForm.firstFee" :min="1" /></el-form-item>
-              <el-form-item label="续重费/kg (¥)"><el-input-number v-model="s.setForm.addFee" :min="1" /></el-form-item>
+              <el-form-item label="首重 (kg)"><el-input-number v-model="s.setForm.first" :min="1" ></el-input-number></el-form-item>
+              <el-form-item label="首重费 (¥)"><el-input-number v-model="s.setForm.firstFee" :min="1" ></el-input-number></el-form-item>
+              <el-form-item label="续重费/kg (¥)"><el-input-number v-model="s.setForm.addFee" :min="1" ></el-input-number></el-form-item>
             </el-form>
           </el-tab-pane>
           <el-tab-pane label="通知设置" name="notice">
             <el-form label-width="110px">
-              <el-form-item label="签收通知"><el-switch v-model="s.setForm.signNtf" /></el-form-item>
-              <el-form-item label="异常通知"><el-switch v-model="s.setForm.excNtf" /></el-form-item>
-              <el-form-item label="营销推送"><el-switch v-model="s.setForm.mktNtf" /></el-form-item>
+              <el-form-item label="签收通知"><el-switch v-model="s.setForm.signNtf" ></el-switch></el-form-item>
+              <el-form-item label="异常通知"><el-switch v-model="s.setForm.excNtf" ></el-switch></el-form-item>
+              <el-form-item label="公告加入站内通知"><el-switch v-model="s.setForm.mktNtf" ></el-switch></el-form-item>
             </el-form>
           </el-tab-pane>
         </el-tabs>
-        <el-button type="primary" @click="ElMessage.success('设置已保存')">保存设置</el-button>
+        <el-button type="primary" @click="saveSettings">保存设置</el-button>
       </div>
     </template>
   </div>
@@ -949,7 +953,7 @@
         </el-form-item>
         <el-form-item label="内容">
           <el-input v-model="s.fbForm.content" type="textarea" :rows="4"
-            placeholder="请描述您的问题或建议（每个运单仅可提交一条反馈）" />
+            placeholder="请描述您的问题或建议（每个运单仅可提交一条反馈）" ></el-input>
         </el-form-item>
       </el-form>
     </div>
@@ -971,11 +975,11 @@
   <!-- 入库/出库弹窗 -->
   <el-dialog v-model="s.invVisible" :title="s.invForm.type==='in'?'新建入库':'新建出库'" width="420px">
     <el-form label-width="70px">
-      <el-form-item label="物品"><el-input v-model="s.invForm.goods" placeholder="物品名称" /></el-form-item>
-      <el-form-item label="数量"><el-input-number v-model="s.invForm.qty" :min="1" :max="999" /></el-form-item>
+      <el-form-item label="物品"><el-input v-model="s.invForm.goods" placeholder="物品名称" ></el-input></el-form-item>
+      <el-form-item label="数量"><el-input-number v-model="s.invForm.qty" :min="1" :max="999" ></el-input-number></el-form-item>
       <el-form-item label="仓库">
         <el-select v-model="s.invForm.wh" style="width:100%">
-          <el-option v-for="w in s.warehouses" :key="w.name" :label="w.name" :value="w.name" />
+          <el-option v-for="w in s.warehouses" :key="w.name" :label="w.name" :value="w.name" ></el-option>
         </el-select>
       </el-form-item>
     </el-form>
@@ -1076,7 +1080,7 @@ for(let i=0;i<24;i++) invInit.push({no:'OUT'+String(18000+i), goods:pick(goodsLi
  * ================================================ */
 const CONFIG = {
   USE_MOCK: false,
-  PHASE_ONE: true, // 真实后端第一阶段：只加载已实现模块；全量后端就绪后再关闭
+  PHASE_ONE: false, // 全量页面接口已接入；保留第一阶段开关用于兼容旧后端
   BASE: '/api',
   TOKEN: localStorage.getItem('ls_token') || '',
   TIMEOUT: 8000,
@@ -1310,7 +1314,10 @@ const api = {
       method: 'POST',
       headers: CONFIG.TOKEN ? { Authorization: 'Bearer ' + CONFIG.TOKEN } : {},
       body: fd
-    }).then(function(r){ if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); });
+    }).then(function(r){
+      if(r.status===401){ if(CONFIG.on401) CONFIG.on401(); throw new Error('登录已失效'); }
+      if (!r.ok) throw new Error('HTTP ' + r.status); return r.json();
+    }).then(function(j){ if(j.code!==0) throw new Error(j.message||'上传失败'); return j.data; });
   },
   /* 客户：下单 / 签收 / 反馈 */
   createOrder: function(data) {
@@ -1426,12 +1433,12 @@ createApp({
       fbVisible:false, fbReadonly:false, fbForm:{no:'',type:'服务态度',content:'',time:'',reply:''},
       fbTypes:['服务态度','配送时效','包装完好','其他'], fbMap:{},
       /* 员工 */
-      taskPage:1, taskList:[], taskTotal:0, statusForm:{task:null,status:'transit',note:''},
+      taskPage:1, taskFilter:'todo', taskList:[], taskTotal:0, statusForm:{task:null,status:'transit',note:''},
       voucherTask:null, voucherFiles:[], voucherNote:'',
       invTab:'in', invVisible:false, invForm:{type:'in',goods:'',qty:1,wh:''}, invList:[],
       /* 管理员 */
       userKw:'', userRoleFilter:'', userPage:1, userList:[], userTotal:0, batchRole:'', setTab:'base',
-      setForm:{name:'物流管理系统',phone:'400-800-1234',notice:'双 11 期间运力紧张，请提前寄件',first:1,firstFee:12,addFee:4,signNtf:true,excNtf:true,mktNtf:false},
+      setForm:{name:'物流管理系统',phone:'400-800-1234',notice:'',first:1,firstFee:12,addFee:4,signNtf:true,excNtf:true,mktNtf:false},
       /* 公共 */
       notices:[], stats:{}, weekList:[], monthList:[], warehouses:[],
       searchHits:[], loading:false
@@ -1458,7 +1465,7 @@ createApp({
       s.crumbParent = (s.role==='staff' && (k==='status'||k==='voucher')) ? '工作台' : '';
     }
     function switchRole(r){
-      if(phaseOne){ ElMessage.info('请通过切换账号使用对应角色'); return; }
+      if(!CONFIG.USE_MOCK){ ElMessage.info('请通过切换账号使用对应角色'); return; }
       if(r===s.role) return;
       s.role = r;
       s.active = {customer:'home',staff:'work',admin:'dash'}[r];
@@ -1488,20 +1495,20 @@ createApp({
     }
     async function loadStats(){ if(phaseOne || !s.auth.logged) return; const r = await api.stats().catch(onFail); if(r) s.stats = r; }
     async function loadWeek(){ if(phaseOne || !s.auth.logged) return; const r = await api.weekly().catch(onFail); if(r) s.weekList = r; }
-    async function loadMonth(){ if(phaseOne || !s.auth.logged) return; const r = await api.monthly().catch(onFail); if(r) s.monthList = r; }
+    async function loadMonth(){ if(phaseOne || !s.auth.logged || s.role!=='admin') return; const r = await api.monthly().catch(onFail); if(r) s.monthList = r; }
     async function loadTasks(){
-      if(phaseOne || !s.auth.logged) return;
-      const r = await api.tasks({status:'todo', page:s.taskPage, size:10}).catch(onFail);
+      if(phaseOne || !s.auth.logged || s.role!=='staff') return;
+      const r = await api.tasks({status:s.taskFilter, page:s.taskPage, size:10}).catch(onFail);
       if(r){ s.taskList = r.list; s.taskTotal = r.total; }
     }
     async function loadUsers(){
-      if(phaseOne || !s.auth.logged) return;
+      if(phaseOne || !s.auth.logged || s.role!=='admin') return;
       const r = await api.users({kw:s.userKw, role:s.userRoleFilter, page:s.userPage, size:10}).catch(onFail);
       if(r){ s.userList = r.list; s.userTotal = r.total; }
     }
-    async function loadInv(){ if(phaseOne || !s.auth.logged) return; const r = await api.inventory({}).catch(onFail); if(r) s.invList = r; }
+    async function loadInv(){ if(phaseOne || !s.auth.logged || s.role!=='staff') return; const r = await api.inventory({}).catch(onFail); if(r) s.invList = r; }
     async function loadWarehouses(){
-      if(phaseOne || !s.auth.logged) return;
+      if(phaseOne || !s.auth.logged || s.role!=='staff') return;
       const r = await api.warehouses().catch(onFail);
       if(r){ s.warehouses = r; if(!s.invForm.wh && r.length) s.invForm.wh = r[0].name; }
     }
@@ -1518,8 +1525,14 @@ createApp({
       try {
         // 刷新会话仍用受保护的订单接口校验 token；不为未开放模块发送请求。
         if(phaseOne) await loadOrders();
-        else await Promise.all([loadStats(), loadWeek(), loadMonth(), loadOrders(), loadWaitSign(), loadLatest(),
-          loadTasks(), loadUsers(), loadInv(), loadWarehouses(), loadNotices()]);
+        else {
+          await loadSettings();
+          const loaders=[loadStats(),loadWeek(),loadNotices()];
+          if(s.role==='customer') loaders.push(loadOrders(),loadWaitSign());
+          if(s.role==='staff') loaders.push(loadTasks(),loadInv(),loadWarehouses());
+          if(s.role==='admin') loaders.push(loadLatest(),loadUsers(),loadMonth());
+          await Promise.all(loaders);
+        }
       } finally { s.loading = false; }
     }
     function loadByRole(r){
@@ -1539,6 +1552,7 @@ createApp({
     watch(function(){ return [s.userRoleFilter, s.userPage]; }, loadUsers);
     watch(function(){ return s.userKw; }, reloadUsersDebounced);
     watch(function(){ return s.taskPage; }, loadTasks);
+    watch(function(){ return s.taskFilter; }, function(){ s.taskPage=1;loadTasks(); });
     watch(function(){ return s.trackSel; }, loadTrack);
     onMounted(function(){
       CONFIG.on401 = function(){ doLogout(true); };
@@ -1603,7 +1617,12 @@ createApp({
     function resetSend(){ s.sendForm = {to:'',dest:'',goods:goodsList[0],weight:1}; }
 
     /* ---------- 员工：状态更新 / 凭证 / 库存 ---------- */
-    function openStatus(task){ s.statusForm = {task:task, status:'transit', note:''}; go('status'); }
+    const statusOptions=computed(function(){
+      const task=s.statusForm.task;
+      if(CONFIG.USE_MOCK) return ['transit','delivering','delivered','exception'];
+      return ({pending:['transit','exception'],transit:['delivering','exception'],delivering:['delivered','exception'],exception:['transit','delivering']})[task && task.orderStatus]||[];
+    });
+    function openStatus(task){ s.statusForm = {task:task, status:'', note:''}; s.statusForm.status=statusOptions.value[0]||''; go('status'); }
     async function saveStatus(){
       if(phaseOne){ laterStage(); return; }
       const task = s.statusForm.task;
@@ -1646,6 +1665,8 @@ createApp({
       if(phaseOne){ laterStage(); return; }
       const r = await api.updateUserRole(u.id, u.role).catch(onFail);
       if(r) ElMessage.success('已将 ' + u.name + ' 的角色调整为「' + u.role + '」');
+      if(r && u.account===s.auth.user.account && !CONFIG.USE_MOCK) { doLogout(true);return; }
+      loadUsers();
     }
     async function batchAssign(){
       if(phaseOne){ laterStage(); return; }
@@ -1654,8 +1675,24 @@ createApp({
       const r = await api.batchRole(s.batchRole, ids).catch(onFail);
       if(r) { ElMessage.success('已批量调整 ' + ids.length + ' 位用户'); loadUsers(); }
     }
+    async function loadSettings(){
+      if(!s.auth.logged || phaseOne || CONFIG.USE_MOCK) return;
+      const r=await req('/settings').catch(onFail);
+      if(r) s.setForm=r;
+    }
+    async function saveSettings(){
+      if(CONFIG.USE_MOCK){ ElMessage.success('演示设置已保存'); return; }
+      const r=await req('/settings',{method:'PUT',body:JSON.stringify(s.setForm)}).catch(onFail);
+      if(r){ ElMessage.success('设置已保存到数据库');await loadSettings(); }
+    }
+    async function toggleUserActive(u){
+      if(CONFIG.USE_MOCK){u.active=!u.active;return;}
+      const r=await req('/users/'+u.id+'/active',{method:'PATCH',body:JSON.stringify({active:!u.active})}).catch(onFail);
+      if(r && u.account===s.auth.user.account){doLogout(true);return;}
+      await loadUsers();
+    }
     const permMatrix = [
-      {mod:'寄件下单',c:true,s:false,a:true},{mod:'包裹追踪 / 签收',c:true,s:true,a:true},
+      {mod:'寄件下单',c:true,s:false,a:false},{mod:'订单查询',c:true,s:true,a:true},{mod:'客户签收',c:true,s:false,a:false},
       {mod:'意见反馈',c:true,s:false,a:false},{mod:'状态更新 / 凭证',c:false,s:true,a:false},
       {mod:'库存管理',c:false,s:true,a:false},{mod:'用户与角色',c:false,s:false,a:true},
       {mod:'报表 / 系统设置',c:false,s:false,a:true}
@@ -1681,7 +1718,7 @@ createApp({
     function onSearchInput(){ doSearchDebounced(); }
     function goSearch(){ if(s.searchHits.length) openTrack(s.searchHits[0]); }
     const unreadCount = computed(function(){ return s.notices.filter(function(n){ return !n.read; }).length; });
-    function readNotice(n){ n.read = true; go(n.act); }
+    function readNotice(n){ n.read = true; go(s.role==='customer'?n.act:initialPage(s.role)); }
 
     /* ================= 认证：登录 / 注册 / 会话 ================= */
     const loginRef = ref(null), regRef = ref(null);
@@ -1789,6 +1826,9 @@ createApp({
       s.auth.login = { account:'', pwd:'' };
       s.auth.user = { name:'', account:'', role:'customer', loginAt:'' };
       s.orderList = []; s.orderTotal = 0; s.trackOrder = null; s.trackSel = ''; s.searchHits = [];
+      s.waitSignList=[];s.signableList=[];s.latestList=[];s.stats={};s.weekList=[];s.monthList=[];
+      s.taskList=[];s.taskTotal=0;s.userList=[];s.userTotal=0;s.invList=[];s.warehouses=[];s.notices=[];s.fbMap={};
+      s.fbVisible=false;s.statusForm={task:null,status:'transit',note:''};s.voucherTask=null;s.voucherFiles=[];
       if (!quiet) ElMessage.success('已安全退出登录');
     }
     function logout(){
@@ -1823,7 +1863,7 @@ createApp({
     }
 
     return { s, CONFIG, phaseOne, ElMessage, menus, pageTitle, roleText, go, switchRole,
-      loadOrders, loadTasks, loadUsers, loadAll,
+      loadOrders, loadTasks, loadUsers, loadAll, statusOptions, saveSettings, toggleUserActive,
       trackOrder, openFeedback, saveFeedback, confirmSign, sendPrice, submitSend, resetSend,
       openStatus, saveStatus, openVoucher, onVoucherFile, saveVoucher,
       invIn, invOut, addInv, weekMax, monthMax,

@@ -56,6 +56,8 @@ public class AuthService {
         if (account == null || !passwords.matches(password, account.passwordHash())) {
             throw new BusinessException(40101, "用户名或密码错误");
         }
+        Boolean enabled=jdbc.queryForObject("SELECT COALESCE((SELECT active FROM user_access WHERE user_id=?),true)",Boolean.class,account.user().id());
+        if(!Boolean.TRUE.equals(enabled)) throw new BusinessException(40302,"账号已禁用，请联系管理员");
         return issue(account.user());
     }
 
@@ -85,7 +87,8 @@ public class AuthService {
         if (token == null || !token.matches("[A-Za-z0-9_-]{43}")) return null;
         return jdbc.query("""
                 SELECT u.id,u.account,u.name,u.role FROM auth_tokens t
-                JOIN app_users u ON u.id=t.user_id WHERE t.token_hash=? AND t.expires_at>?
+                JOIN app_users u ON u.id=t.user_id LEFT JOIN user_access a ON a.user_id=u.id
+                WHERE t.token_hash=? AND t.expires_at>? AND COALESCE(a.active,true)=true
                 """, (rs, n) -> new CurrentUser(rs.getLong("id"), rs.getString("account"),
                 rs.getString("name"), rs.getString("role")), hash(token), Timestamp.from(Instant.now()))
                 .stream().findFirst().orElse(null);

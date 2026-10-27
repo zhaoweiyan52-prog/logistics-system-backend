@@ -219,12 +219,12 @@ class CoreApiTest {
         assertThat(getJson("/api/orders/"+no,b)).isEqualTo(getJson("/api/orders/unknown",b));
     }
 
-    @Test void unsupportedStageTwoReturnsExplicitMessage() throws Exception {
+    @Test void unknownRoutesReturnExplicitMessageAndOverviewIsNowImplemented() throws Exception {
         String token=register();
         JsonNode r=getJson("/api/stats/overview",token);
-        assertThat(r.path("code").asInt()).isEqualTo(50101);
-        assertThat(r.path("message").asText()).contains("第一阶段");
-        assertThat(postJson("/api/orders/unknown/sign",Map.of("code","1234"),token).path("code").asInt()).isEqualTo(50101);
+        assertThat(r.path("code").asInt()).isZero();
+        assertThat(getJson("/api/not-a-route",token).path("code").asInt()).isEqualTo(40400);
+        assertThat(postJson("/api/orders/unknown/sign",Map.of("code","1234"),token).path("code").asInt()).isEqualTo(40401);
     }
 
     @Test void corsPreflightAllowsLocalFrontendBeforeAuth() throws Exception {

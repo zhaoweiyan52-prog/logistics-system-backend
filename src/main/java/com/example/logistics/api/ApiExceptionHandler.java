@@ -32,7 +32,10 @@ public class ApiExceptionHandler {
     public ApiResponse<Void> malformed(Exception e) { return ApiResponse.error(40001, "参数格式错误，请检查字段、类型及范围"); }
 
     @ExceptionHandler({NoResourceFoundException.class, NoHandlerFoundException.class, HttpRequestMethodNotSupportedException.class})
-    public ApiResponse<Void> unsupported(Exception e) { return ApiResponse.error(50101, "该接口或请求方法未在第一阶段实现"); }
+    public ApiResponse<Void> unsupported(Exception e) { return ApiResponse.error(40400, "接口不存在或请求方法不正确"); }
+
+    @ExceptionHandler(org.springframework.web.multipart.MaxUploadSizeExceededException.class)
+    public ApiResponse<Void> uploadTooLarge(Exception e) { return ApiResponse.error(40001,"单张图片最多 2 MB，总请求最多 7 MB"); }
 
     @ExceptionHandler(DataAccessException.class)
     public ResponseEntity<ApiResponse<Void>> database(DataAccessException e) {
