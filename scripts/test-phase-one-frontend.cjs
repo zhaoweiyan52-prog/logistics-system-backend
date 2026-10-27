@@ -68,14 +68,16 @@ function onlyPhaseOneRequests(requests) {
 }
 
 for(const loginError of ['该账号尚未注册，请先注册','密码错误，请重试']) {
-  test(`login displays the server reason: ${loginError}`,async()=>{
-    const {view,messages}=await boot({restore:false,full:true,loginError});
+  test(`login retains the server reason in the form: ${loginError}`,async()=>{
+    const {view}=await boot({restore:false,full:true,loginError});
     view.loginRef.value={validate:async()=>true};
     view.s.auth.login={account:'login_test',pwd:'TestOnly123!'};
     await view.submitLogin();
     assert.equal(view.s.auth.logged,false);
     assert.equal(view.s.auth.submitting,false);
-    assert.ok(messages.some(m=>m.level==='error'&&m.text===loginError));
+    assert.equal(view.s.auth.loginError,loginError);
+    await settle();
+    assert.equal(view.s.auth.loginError,loginError);
   });
 }
 

@@ -165,6 +165,7 @@
     background:linear-gradient(135deg,#2563eb,#1d4ed8);border:none;margin-top:6px;}
   .ap-btn:hover{background:linear-gradient(135deg,#3b74f0,#1e40af);}
   .ap-row{display:flex;align-items:center;justify-content:space-between;margin:2px 0 18px;}
+  .ap-login-error{margin-bottom:14px;}
   .ap-demo{margin-top:20px;padding:13px 15px;border-radius:11px;background:#f8fafc;border:1px dashed #cbd5e1;}
   .ap-demo-t{font-size:12px;color:#64748b;margin-bottom:9px;display:flex;align-items:center;gap:6px;}
   .ap-demo-btns{display:flex;gap:8px;flex-wrap:wrap;}
@@ -223,12 +224,12 @@
             </div>
             <el-form :model="s.auth.login" :rules="loginRules" ref="loginRef" @keyup.enter="submitLogin">
               <el-form-item prop="account">
-                <el-input v-model="s.auth.login.account" size="large" placeholder="请输入用户名" clearable>
+                <el-input v-model="s.auth.login.account" @input="s.auth.loginError=''" size="large" placeholder="请输入用户名" clearable>
                   <template #prefix>👤</template>
                 </el-input>
               </el-form-item>
               <el-form-item prop="pwd">
-                <el-input v-model="s.auth.login.pwd" size="large" type="password" show-password
+                <el-input v-model="s.auth.login.pwd" @input="s.auth.loginError=''" size="large" type="password" show-password
                   placeholder="请输入密码" clearable>
                   <template #prefix>🔒</template>
                 </el-input>
@@ -237,6 +238,7 @@
                 <el-checkbox v-model="s.auth.remember">记住登录状态</el-checkbox>
                 <el-link type="primary" :underline="false" style="font-size:13px" @click="forgotPwd">忘记密码？</el-link>
               </div>
+              <el-alert v-if="s.auth.loginError" :title="s.auth.loginError" type="error" :closable="false" show-icon class="ap-login-error"></el-alert>
               <el-button class="ap-btn" type="primary" size="large" :loading="s.auth.submitting" @click="submitLogin">
                 登 录
               </el-button>
@@ -1418,7 +1420,7 @@ createApp({
       role:'customer', active:'home', crumbParent:'',
       collapsed:false, searchKw:'', notifOpen:false,
       /* 认证态 */
-      auth:{ tab:'login', logged:false, remember:true, submitting:false, profileVisible:false,
+      auth:{ tab:'login', logged:false, remember:true, submitting:false, profileVisible:false, loginError:'',
         user:{ name:'', account:'', role:'customer', loginAt:'' },
         login:{ account:'', pwd:'' },
         reg:{ account:'', pwd:'', pwd2:'', role:'customer', agree:false } },
@@ -1778,13 +1780,14 @@ createApp({
       loadAll();
     }
     async function submitLogin(){
+      s.auth.loginError = '';
       const ok = await loginRef.value.validate().catch(function(){ return false; });
       if (!ok) return;
       s.auth.submitting = true;
       try {
         const d = await api.login({ account: s.auth.login.account.trim(), pwd: s.auth.login.pwd });
         afterLogin(d, '登录成功');
-      } catch(e) { ElMessage.error(e.message || '登录失败，请重试'); }
+      } catch(e) { s.auth.loginError = e.message || '登录失败，请重试'; }
       finally { s.auth.submitting = false; }
     }
     async function submitReg(){
@@ -1824,6 +1827,7 @@ createApp({
       s.auth.tab = 'login';
       s.auth.profileVisible = false;
       s.auth.login = { account:'', pwd:'' };
+      s.auth.loginError = '';
       s.auth.user = { name:'', account:'', role:'customer', loginAt:'' };
       s.orderList = []; s.orderTotal = 0; s.trackOrder = null; s.trackSel = ''; s.searchHits = [];
       s.waitSignList=[];s.signableList=[];s.latestList=[];s.stats={};s.weekList=[];s.monthList=[];
