@@ -32,7 +32,9 @@ public class CorsConfig {
             }
         });
         FilterRegistrationBean<CorsFilter> bean = new FilterRegistrationBean<>(filter);
-        bean.setOrder(Ordered.HIGHEST_PRECEDENCE);
+        // Boot 的 ForwardedHeaderFilter 必须先把代理内的 HTTP 请求恢复为公网 HTTPS 地址，
+        // 否则同源浏览器 POST 的 Origin 会被误判为跨域，并在登录前返回 403。
+        bean.setOrder(Ordered.HIGHEST_PRECEDENCE + 10);
         return bean;
     }
 }
