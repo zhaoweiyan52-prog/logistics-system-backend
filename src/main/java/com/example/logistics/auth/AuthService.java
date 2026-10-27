@@ -53,9 +53,9 @@ public class AuthService {
     public LoginResult login(String username, String password) {
         validatePasswordBytes(password);
         Account account = find(username);
-        if (account == null || !passwords.matches(password, account.passwordHash())) {
-            throw new BusinessException(40101, "用户名或密码错误");
-        }
+        if (account == null) throw new BusinessException(40101, "该账号尚未注册，请先注册");
+        if (!passwords.matches(password, account.passwordHash()))
+            throw new BusinessException(40101, "密码错误，请重试");
         Boolean enabled=jdbc.queryForObject("SELECT COALESCE((SELECT active FROM user_access WHERE user_id=?),true)",Boolean.class,account.user().id());
         if(!Boolean.TRUE.equals(enabled)) throw new BusinessException(40302,"账号已禁用，请联系管理员");
         return issue(account.user());

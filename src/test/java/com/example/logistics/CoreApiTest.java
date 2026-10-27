@@ -123,8 +123,14 @@ class CoreApiTest {
         JsonNode success=postJson("/api/auth/login",Map.of("username",name,"password","Secret123!"),null);
         assertThat(success.path("code").asInt()).isZero();
         assertThat(success.path("data").path("token").asText()).hasSize(43);
-        assertThat(postJson("/api/auth/login",Map.of("username",name,"password","Wrong123!"),null).path("code").asInt()).isEqualTo(40101);
-        assertThat(postJson("/api/auth/login",Map.of("username",username(),"password","Secret123!"),null).path("code").asInt()).isEqualTo(40101);
+        Long tokensBefore=jdbc.queryForObject("SELECT COUNT(*) FROM auth_tokens",Long.class);
+        JsonNode wrong=postJson("/api/auth/login",Map.of("username",name,"password","Wrong123!"),null);
+        assertThat(wrong.path("code").asInt()).isEqualTo(40101);
+        assertThat(wrong.path("message").asText()).isEqualTo("密码错误，请重试");
+        JsonNode unknown=postJson("/api/auth/login",Map.of("username",username(),"password","Secret123!"),null);
+        assertThat(unknown.path("code").asInt()).isEqualTo(40101);
+        assertThat(unknown.path("message").asText()).isEqualTo("该账号尚未注册，请先注册");
+        assertThat(jdbc.queryForObject("SELECT COUNT(*) FROM auth_tokens",Long.class)).isEqualTo(tokensBefore);
     }
 
     @Test void allBusinessPathsRejectMissingOrForgedTokens() throws Exception {

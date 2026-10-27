@@ -21,7 +21,8 @@ class ProxyCorsTest {
                 .header("Origin","https://"+HOST).header("X-Forwarded-Proto","https")
                 .header("X-Forwarded-Host",HOST).header("X-Forwarded-Port","443")
                 .contentType("application/json").content("{\"username\":\"not_registered\",\"password\":\"TestOnly123!\"}"))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(40101));
+                .andExpect(status().isOk()).andExpect(jsonPath("$.code").value(40101))
+                .andExpect(jsonPath("$.message").value("该账号尚未注册，请先注册"));
     }
     @Test void untrustedBrowserOriginIsStillRejectedBehindProxy() throws Exception {
         mvc.perform(post("/api/auth/login").with(req->{req.setScheme("http");req.setServerName("service-internal");req.setServerPort(10000);return req;})

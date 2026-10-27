@@ -12,7 +12,7 @@ test('in-DOM Vue components use explicit end tags so table columns do not become
   assert.doesNotMatch(html, /<el-[\w-]+\b(?:"[^"]*"|'[^']*'|[^'">])*\/>/);
 });
 
-async function boot({ role='customer', restore=true, expired=false, orderError=false, mock=false, full=false }={}) {
+async function boot({ role='customer', restore=true, expired=false, orderError=false, loginError='', mock=false, full=false }={}) {
   let view;
   const requests=[], messages=[], mounted=[], watchers=[];
   const values = new Map();
@@ -35,6 +35,7 @@ async function boot({ role='customer', restore=true, expired=false, orderError=f
     fetch:async (url,options={})=>{
       const method=options.method||'GET'; requests.push({url,method,body:options.body});
       const pathname=url.split('?')[0];
+      if (loginError && pathname==='/api/auth/login') return {status:200,ok:true,json:async()=>({code:40101,data:null,message:loginError})};
       if (expired && pathname==='/api/orders') return {status:401,ok:false,json:async()=>({})};
       if (orderError && pathname==='/api/orders') return {status:200,ok:true,json:async()=>({code:50001,message:'Database unavailable'})};
       let data;
@@ -64,6 +65,18 @@ function onlyPhaseOneRequests(requests) {
     assert.ok(['/api/orders','/api/orders/SF_TEST_ORDER','/api/auth/login','/api/auth/register','/api/auth/logout'].includes(pathname),
       `Unexpected request: ${request.method} ${request.url}`);
   }
+}
+
+for(const loginError of ['该账号尚未注册，请先注册','密码错误，请重试']) {
+  test(`login displays the server reason: ${loginError}`,async()=>{
+    const {view,messages}=await boot({restore:false,full:true,loginError});
+    view.loginRef.value={validate:async()=>true};
+    view.s.auth.login={account:'login_test',pwd:'TestOnly123!'};
+    await view.submitLogin();
+    assert.equal(view.s.auth.logged,false);
+    assert.equal(view.s.auth.submitting,false);
+    assert.ok(messages.some(m=>m.level==='error'&&m.text===loginError));
+  });
 }
 
 for (const role of ['customer','staff','admin']) {
