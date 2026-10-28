@@ -1,213 +1,116 @@
-# 物流管理系统：Spring Boot + MySQL 后端
+# Logistics Management System
 
-这是一个 Spring Boot + MySQL 项目，现已接通组员页面约定的全部 21 个接口：客户寄件、订单、签收反馈；员工任务、凭证、库存；管理员用户角色、统计报表。另增加用户启停、系统设置的 3 个接口，将原页面仅在浏览器修改的操作真正保存到数据库。原有路径和字段保留。
+Undergraduate Software Engineering Course Project: A web application that supports customers, logistics staff, and administrators.
+[Online Demo](https://logistics-system-backend-o7if.onrender.com/logistics-admin.html) · [Chinese Maintenance Instructions](README.zh-CN.md)
 
-**验证状态：两轮修缮共完成 H2 37 项测试、前端 26 项检查，隔离浏览器验证认证提示及分页。修复提交 `70bd1d2` 已在 Render 上线，公网 HTML 与发布源文件一致，健康及基础鉴权检查通过。本机 MySQL 原 35 项与公网 23 项完整业务检查为此前结果，本轮未重跑；尚未逐按钮完成三角色公网验收。详见 [云端验证记录](docs/云端部署验证记录.md)。**
+## Review Navigation
 
-**已有第一阶段数据库必须先执行增量升级，再启动新版。管理员首次启用、24 个接口、权限和业务边界见 [全功能对接与升级](docs/全功能对接与升级.md)。**
+- [Requirements Specification](docs/SRS.md): Current requirements baseline, business rules, scope limitations, and acceptance criteria.
+- [Design and Interfaces](docs/DESIGN.md): Architecture, data model, state transitions, and 24 API operations.
+- [Verification and Evolution](docs/VERIFICATION.md): Test evidence, fix logs, and demonstration steps.
 
-本机 MySQL 使用 `F:\MYSQL\Server` 程序目录、`F:\MYSQL\Data` 数据目录和 `MySQL80Logistics` 服务。本机和云端已有业务库均已升级到 13 张表，无需再次建表或初始化。仅旧第一阶段库执行 **`sql/03-full-features.sql`** 增量升级；全新数据库执行 01、02。
+These documents describe the system that was put in place as of October 28, 2026, at application commit `70bd1d2`. They can be used to evaluate the project, but they are not the same as the final report for the course (maximum 1,000 words) or each student's individual logbook.
 
-升级、打包并启动后，打开 `http://localhost:8080/logistics-admin.html` 即可访问。可在项目目录执行下面命令启动；脚本读取 F 盘由 Windows 用户加密保护的项目账号凭证，不在仓库保存密码：
+## Scope
 
-```powershell
-& .\scripts\start-mysql-backend.ps1
-```
+Customers can place orders, check their order status and tracking information, confirm receipt using a verification code, and submit feedback. Employees use a shared task pool to track progress, upload proof of delivery, and record inventory movements. Administrators manage roles and account activation/deactivation, view reports, and save settings. The interface and business prompts are currently in Chinese; the English documentation does not imply that the interface has been localized into English. The role labels are Customer (`客户`), Logistics Staff (`物流员工`), and System Administrator (`系统管理员`).
 
-下面的手动建库步骤供其他电脑首次配置参考。
+## Technology and Architecture
 
-当前功能与业务边界以 [全功能对接与升级](docs/全功能对接与升级.md) 为准；本轮缺口、bug 与验收见 [修缮清单与验证](docs/修缮清单与验证.md)。`docs/接口核对与待确认问题.md`、`docs/验证记录.md` 为第一阶段历史记录。
+The backend targets Java 17 and uses Spring Boot 3.5.7, JdbcTemplate, and MySQL. The system has a layered architecture in a single Spring Boot application. Vue 3 and Element Plus provide the browser interface. Spring Boot serves the page and its dependencies, so there is no need for an npm build. The public demo runs on Render with an Aiven MySQL database.
 
-免费公网部署见 [Render + Aiven MySQL说明](docs/免费部署-Render与Aiven.md)。现有站点已部署到 Render + Aiven；当前及历史上线证据见 [云端验证记录](docs/云端部署验证记录.md)。请通过公网网址或运行中的本机后端访问，不能直接双击 HTML 文件连接云端账号。
+## Installation and Execution
 
-## 1. 从你已经学过的 Java、MySQL 理解代码
+Requires JDK 17+, Maven 3.6.3+, and MySQL 8.0.16+. Frontend script checks also require Node.js that supports `node --test`. A verified environment uses JDK 24.0.1, Maven 3.9.11, and MySQL 8.0.46; Cloud-based Docker environments use Java 17. On new computers, you should install your own tools rather than relying on the maintainer’s portable cache.
 
-Spring Boot 帮你启动 Web 服务器、接收 HTTP 请求、把 JSON 转成 Java 对象、连接数据库。你不需要自己写 Socket 或配置外部 Tomcat。
+### 1. Get the Code
 
-一次下单走这条链路：
-
-```text
-浏览器 POST /api/orders
-  → ApiAuthFilter：用 token 找到真实登录用户
-  → OrderController：接收并校验 receiver/dest/goods/weight/fee
-  → OrderService：生成运单号，把用户编号作为 owner_id
-  → JdbcTemplate：执行带占位符的 SQL，写订单及初始轨迹
-  → ApiResponse：返回 {code:0,data:订单,message:"成功"}
-```
-
-- `@RestController`：这个 Java 类负责 HTTP 接口，返回对象自动转 JSON。
-- `@RequestBody`：把请求 JSON 转成方法参数。
-- `@Valid`、`@NotBlank` 等：检查字段是否缺失、超长、金额为负等。
-- `@Service`：放业务逻辑，不把业务全塞进 Controller。
-- `@Transactional`：订单和轨迹一起提交；其中一步失败就一起回滚。注册和签发 token 也在同一事务。
-- `JdbcTemplate`：简化你学过的 JDBC；`?` 绑定参数，避免把输入拼成 SQL。
-- `@RequestAttribute CurrentUser`：取鉴权过滤器查出的身份，绝不相信浏览器声称自己是谁。
-
-密码用 BCrypt 保存，数据库只保存带盐哈希。登录时用 `matches` 比对，而不是把哈希解密。每次登录生成 32 字节随机 token，前端继续按 `Authorization: Bearer <token>` 发送。数据库只保存 token 的 SHA-256 摘要及有效期，默认 8 小时；登出删除对应记录。多次登录的其他 token 不受单次退出影响。
-
-## 2. 项目结构
-
-```text
-pom.xml                              Maven 依赖与构建配置
-src/main/java/com/example/logistics/
-  LogisticsApplication.java          程序入口
-  api/                               统一返回体、中文错误处理
-  auth/                              注册登录、密码哈希、token 校验
-  order/                             订单接口、字段校验、SQL 与归属检查
-  operations/                        员工任务、库存、管理员、报表、首位管理员初始化
-  config/                            本地跨域配置
-src/main/resources/application.yml   MySQL 配置（密码从环境变量读取）
-src/main/resources/schema.sql        表结构源文件，正式启动不自动执行
-src/main/resources/static/           真实接口模式的前端副本和本地依赖
-src/test/                           H2 测试，H2 不打进正式 jar
-sql/01-create-database.sql           建库 SQL
-sql/02-schema.sql                    可直接在 MySQL 执行的建表 SQL
-sql/03-full-features.sql             第一阶段旧库的增量升级，不删除原有数据
-scripts/mvn.ps1                      优先使用本项目便携 Maven
-scripts/verify-api.ps1               对运行中的后端执行 HTTP 验证
-reference/                          原始页面、接口文档、mock 服务器
-docs/                               接口核对、验证记录
-```
-
-`sql/02-schema.sql` 与 `src/main/resources/schema.sql` 内容一致；以后修改表结构应同时维护。原始文件只作为接口参考，其中的建议和“已验证”声明不代表本项目已完成。
-
-## 3. 环境要求与本机情况
-
-- 项目使用 Spring Boot 3.5.7，编译目标 Java 17；当前已在本机 JDK **24.0.1** 上编译测试。
-- Maven 3.6.3+。本机 PATH 没有 Maven，已下载 **Maven 3.9.11** 到 `.tools/apache-maven-3.9.11`，未修改系统 PATH。
-- MySQL **8.0.16+**；本机已配置 **8.0.46**，程序在 F 盘，服务为 `MySQL80Logistics`，本机端口 3306。其他电脑请先安装或连接自己的 MySQL。
-- `.tools` 和 `.m2` 是本机工具及依赖缓存，已加入 `.gitignore`，不属于源代码。其他组员可自行安装 Maven，然后直接使用 `mvn`。
-
-在 PowerShell 中进入项目目录：
-
-```powershell
-cd 'C:\Users\bet\Documents\ChatGPT\3200'
-$env:JAVA_HOME = 'D:\jdk'    # 本机已验证；其他电脑改成自己的 JDK 目录
+```sh
+git clone https://github.com/zhaoweiyan52-prog/logistics-system-backend.git
+cd logistics-system-backend
 java -version
-javac -version
-& .\scripts\mvn.ps1 -version
+mvn -version
 ```
 
-如果系统存在旧 Java 7/8，不要把它们设置为本项目的 `JAVA_HOME`。脚本只在没有 `JAVA_HOME` 且 `D:\jdk` 存在时自动使用它，不修改系统设置。
+### 2. Prepare a Standalone Database
 
-## 4. 创建 MySQL 数据库和表
+From the root directory of the repository, start the MySQL command-line client using a database administrator account. Run the following SQL only for a new, empty database.
 
-先启动 MySQL 服务。用 MySQL 命令行、Workbench 或 Navicat 以有建库权限的账号执行下面两份文件：
+```sh
+mysql -u root -p
+```
 
-1. `sql/01-create-database.sql`。
-2. 选择 `logistics` 数据库，再执行 `sql/02-schema.sql`。
-
-MySQL 命令行示例（`SOURCE` 后使用你实际的绝对路径）：
 
 ```sql
-SOURCE C:/Users/bet/Documents/ChatGPT/3200/sql/01-create-database.sql;
+SOURCE sql/01-create-database.sql;
 USE logistics;
-SOURCE C:/Users/bet/Documents/ChatGPT/3200/sql/02-schema.sql;
+SOURCE sql/02-schema.sql;
 SHOW TABLES;
-```
-
-应出现 13 张表：`app_users`、`auth_tokens`、`logistics_orders`、`order_traces`、`user_access`、`order_feedback`、`logistics_tasks`、`task_vouchers`、`warehouses`、`warehouse_stock`、`inventory_records`、`system_settings`、`notifications`。用户名大小写敏感，与原 mock 的严格比较一致。建表脚本只对新库执行一次：索引不是重复执行迁移脚本。脚本没有 DROP，不会清空你的旧数据；若同名表已存在，应先核对结构。
-
-用数据库管理员创建一个应用账号，以下密码只是占位符，执行前请替换：
-
-```sql
-CREATE USER 'logistics_app'@'localhost' IDENTIFIED BY '替换为自己的数据库密码';
+CREATE USER 'logistics_app'@'localhost' IDENTIFIED BY '<YOUR_LOCAL_DATABASE_PASSWORD>';
 GRANT SELECT, INSERT, UPDATE, DELETE ON logistics.* TO 'logistics_app'@'localhost';
 ```
 
-没有自动创建 `zhangsan/staff01/admin` 演示账号。请使用前端注册自己的客户账号。
+Replace the password placeholder with your own local database password. There should be 13 tables. The application does not automatically create tables upon startup; do not re-run script 02 on an existing database, as some index statements cannot be re-executed. For legacy Phase 1 databases, use `sql/03-full-features.sql` to preserve data during the upgrade; databases that have already been upgraded do not need to be rebuilt.
 
-## 5. 配置、测试、启动
+### 3. Configure and Start
 
-测试不需要 MySQL，使用独立的 H2 内存数据库，结束后数据消失：
-
-```powershell
-& .\scripts\mvn.ps1 test
-```
-
-连接真实 MySQL 并运行：
+Windows PowerShell:
 
 ```powershell
 $env:DB_USERNAME = 'logistics_app'
-$env:DB_PASSWORD = '你刚设置的数据库密码'
+$env:DB_PASSWORD = '<YOUR_LOCAL_DATABASE_PASSWORD>'
 $env:DB_URL = 'jdbc:mysql://localhost:3306/logistics?useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true'
-& .\scripts\mvn.ps1 spring-boot:run
+mvn spring-boot:run
 ```
 
-环境变量只作用于当前 PowerShell 及其子进程；换一个窗口启动时要重新设置。密码不写进代码，不把自己的环境配置提交到仓库。服务启动不代表数据库连通，必须继续验证 API。
+macOS / Linux:
 
-浏览器打开：**http://localhost:8080/logistics-admin.html**。项目内这份页面已设置 `USE_MOCK:false`、`BASE:'/api'`，使用本地 Vue 3.4.38 / Element Plus 2.7.8 文件。原始页面完整保存在 `reference`，未修改外部原文件。
-
-当前页面设置 `PHASE_ONE:false`，三个角色使用完整已实现模块；`USE_MOCK:false`、`BASE:'/api'`，同源调用真实后端。真实模式不展示演示账号或任意角色切换入口，角色以实际登录账号为准。登录、注册失败及会话过期在认证表单内显示原因。`USE_MOCK:true` 仅保留为独立演示模式；reference 中原始页面不代表当前实现。
-
-前端请求回归检查可执行（需要 Node.js）：
-
-```powershell
-node --test .\scripts\test-phase-one-frontend.cjs
+```sh
+export DB_USERNAME='logistics_app'
+export DB_PASSWORD='<YOUR_LOCAL_DATABASE_PASSWORD>'
+export DB_URL='jdbc:mysql://localhost:3306/logistics?useUnicode=true&characterEncoding=UTF-8&connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true'
+mvn spring-boot:run
 ```
 
-不要同时启动 mock-server.js，它默认也占用 8080。也可改端口：
+Open [http://localhost:8080/logistics-admin.html](http://localhost:8080/logistics-admin.html) in your browser and verify that [http://localhost:8080/health](http://localhost:8080/health) returns `{"status":"UP"}`. Do not double-click the HTML file directly; the page’s `/api` requires a running backend. Local and production accounts are stored in separate databases. Passwords are configured locally only and should not be committed to Git.
 
-```powershell
-$env:SERVER_PORT = '8081'
-& .\scripts\mvn.ps1 spring-boot:run
-```
+### 4. Creating an Evaluation Account
 
-这时访问 `http://localhost:8081/logistics-admin.html`，同源相对地址 `/api` 会跟随端口。
+There is no default login username or password. The registration tab (`注册账号`) allows you to select Customer (`我是客户`) or Staff (`我是物流员工`) and automatically logs you in upon successful registration. Only if your new database does not yet have an administrator:
 
-如果使用另一份独立托管的前端，按原文档改 `USE_MOCK:false` 与 `BASE` 即可。默认放行 `http://localhost:5500`、`http://127.0.0.1:5500` 以及同主机 8000 端口，OPTIONS 预检成功返回 204。其他端口通过逗号分隔的 `CORS_ORIGINS` 环境变量配置；不建议直接双击 `file://` 页面。
+1. First, register an account for evaluation purposes, then stop the application.
+2. Set the environment variable `BOOTSTRAP_ADMIN_ACCOUNT` to that username, then restart the application.
+3. Stop the application, delete this environment variable, restart the application, and log in again; the account will now be an administrator. This process revokes the account’s original token.
 
-## 6. 对真实 MySQL 服务执行验证
+If an administrator already exists, this mechanism will not elevate other accounts; subsequent role assignments are performed on the administrator page. The production administrator has already been initialized and should not be configured again.
 
-保持后端运行，在另一个 PowerShell 窗口执行：
+Use the following commands for steps 2 and 3, replacing `<REGISTERED_USERNAME>` with the account you created. Stop the running application with Ctrl+C before each restart. Keep the database environment variables set in the same terminal.
 
-```powershell
-cd 'C:\Users\bet\Documents\ChatGPT\3200'
-& .\scripts\verify-api.ps1
-# 如果改过后端端口：
-# & .\scripts\verify-api.ps1 -Base 'http://localhost:8081/api'
-```
-
-脚本创建两个随机客户和一个订单，验证登录、下单、本人查询、跨客户隔离、错误密码、登出及失效 token。**这些测试数据会保留在你连接的数据库中**，脚本不执行清库操作，也不打印密码/token。后端必须连接真实 MySQL 才能据此说明 MySQL 联调通过。
-
-在数据库检查持久化及哈希（不要对外展示自己的真实密码或 token）：
-
-```sql
-SELECT id, account, role, password_hash FROM app_users ORDER BY id DESC LIMIT 5;
-SELECT no, owner_id, receiver, weight, fee, status, created_at FROM logistics_orders ORDER BY created_at DESC LIMIT 5;
-SELECT order_no, event_time, txt, done FROM order_traces ORDER BY id DESC LIMIT 5;
-```
-
-停止并重新启动后端，再使用你自己注册的账号登录；原订单仍应可查询。这一步专门验证进程重启后持久化，不等同于 H2 内存测试。
-
-## 7. 已实现的接口
-
-所有地址前缀为 `/api`；成功 HTTP 200 且 `code:0`。业务错误 HTTP 200 且 `code!=0`，使原前端能显示 `message`；无效/过期 token 使用 HTTP 401。服务端内部故障使用 HTTP 500。
-
-| 方法 | 路径 | 说明 |
+| Shell | Set before the first restart | Remove before the second restart |
 |---|---|---|
-| POST | `/auth/register` | `{username,password,role}`，返回 `{token,role,name,account}` |
-| POST | `/auth/login` | `{username,password}`，返回同上 |
-| POST | `/auth/logout` | 必须有 token，返回 `{ok:true}` |
-| POST | `/orders` | `{receiver,dest,goods,weight,fee}`，返回 Order |
-| GET | `/orders` | `kw/status/page/size`，返回 `{list,total}` |
-| GET | `/orders/{no}` | 客户返回本人 Order，员工/管理员可查全局，含 traces、fb |
+| PowerShell | `$env:BOOTSTRAP_ADMIN_ACCOUNT = '<REGISTERED_USERNAME>'` | `Remove-Item Env:BOOTSTRAP_ADMIN_ACCOUNT` |
+| macOS / Linux | `export BOOTSTRAP_ADMIN_ACCOUNT='<REGISTERED_USERNAME>'` | `unset BOOTSTRAP_ADMIN_ACCOUNT` |
 
-上表为原核心接口，新增模块的完整清单见 [全功能接口与权限](docs/全功能对接与升级.md)。订单列表按下单时间倒序，同时间用运单号稳定排序；`kw` 搜索运单号/物品；`page` 默认 1，`size` 默认 10、最大 100。客户不存在与非本人订单返回同一错误。
+Restart with `mvn spring-boot:run` after each step.
 
-订单号格式为 `SF + UTC日期8位 + UUID十六进制32位`，共 42 位；数据库主键保证唯一。下单初始 pending、预计三天后送达，并生成真实轨迹和揽收任务。时间是 ISO 8601，重量和运费为 JSON number；fb 在无反馈时为 null，提交后为真实 Feedback。
+### 5. Testing and Packaging
 
-## 8. 打包与交给组员
-
-```powershell
-& .\scripts\mvn.ps1 package
-java -jar .\target\logistics-backend-0.0.1-SNAPSHOT.jar
+```sh
+mvn test
+node --test scripts/test-phase-one-frontend.cjs
+mvn package
+java -jar target/logistics-backend-0.0.1-SNAPSHOT.jar
 ```
 
-运行 jar 前仍需设置数据库环境变量、完成建表。Java 编译目标为 17，组员可使用兼容的 JDK 17+。有系统 Maven 的电脑可把上文 `& .\scripts\mvn.ps1` 替换为 `mvn`。
+Stop the development service before starting the JAR to avoid port conflicts; the database environment variable must still be set. The backend uses a standalone H2 in-memory database by default for testing; MySQL is not required, and this does not guarantee that all MySQL behavior is correct. The frontend script names retain historical conventions, but the tests include the full mode. The `SERVER_PORT` environment variable can be used to change the port.
 
-`target`、`.m2`、`.tools` 不提交 Git。给组员源码、SQL、说明和 `src/main/resources/static` 即可；不需要把本机数据库目录或自己的密码发出去。
+If startup fails, check the JDK, MySQL service, database tables, application account permissions, and port usage. Free production instances may require a startup delay. Please use separate local data for review; the public demo is not a data sandbox that can be cleared at will.
 
-启动失败常见原因：`JAVA_HOME` 指向 Java 7/8、MySQL 未启动、库未创建、密码错误、账号没有表权限、8080 已被 mock 占用。数据库异常对前端只返回通用消息，避免暴露 SQL、内部路径和账号信息。
+## Known Limitations
 
-Spring Boot 3.5 系列的 Java/Maven 兼容要求可参阅[官方说明](https://docs.spring.io/spring-boot/3.5/system-requirements.html)。依赖具体版本由 `pom.xml` 固定。
+Inventory and shipping orders are separate; there are no personal task assignments, sender details or pickup addresses, a complete order cancellation process, feedback replies, password resets, or proof-of-delivery viewing interfaces. The receipt confirmation code is a teaching feature; shipping fees are calculated by the page based on settings and submitted, then validated and saved by the backend; they are not used for actual billing or identity verification. Notification read status is not persisted on the server. See the SRS for detailed boundaries.
+
+## Repository Structure
+
+`src/main/java`: Backend; `src/main/resources/static`: Actual pages and local dependencies; `src/test`: Automated tests; `sql`: Database creation and incremental upgrades; `scripts`: Auxiliary execution and validation; `docs`: English review materials and Chinese maintenance evidence; `reference`: Original pages, simulated services, and historical contracts.
+Simulation verification in `reference` does not equate to acceptance of the current application; nor is it the application entry point. Build artifacts, credentials, and IDE settings are not part of the source code commit.
