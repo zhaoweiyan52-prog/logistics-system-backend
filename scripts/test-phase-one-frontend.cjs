@@ -12,7 +12,7 @@ test('in-DOM Vue components use explicit end tags so table columns do not become
   assert.doesNotMatch(html, /<el-[\w-]+\b(?:"[^"]*"|'[^']*'|[^'">])*\/>/);
 });
 
-async function boot({ role='customer', restore=true, expired=false, orderError=false, loginError='', mock=false, full=false }={}) {
+async function boot({ role='customer', restore=true, expired=false, orderError=false, loginError='', regError='', mock=false, full=false, transport={} }={}) {
   let view;
   const requests=[], messages=[], mounted=[], watchers=[];
   const values = new Map();
@@ -29,14 +29,16 @@ async function boot({ role='customer', restore=true, expired=false, orderError=f
     console:{log(){}},localStorage:storage,sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},
     AbortController,URLSearchParams,FormData,setTimeout,clearTimeout,
     Vue:{reactive:x=>x,ref:x=>({value:x}),computed:get=>({get value(){return get();}}),
-      watch:(get,callback)=>watchers.push(callback),onMounted:callback=>mounted.push(callback),
+      watch:(get,callback)=>{callback.get=get;watchers.push(callback);},onMounted:callback=>mounted.push(callback),
       createApp:options=>({use(){return this;},mount(){view=options.setup();mounted.forEach(callback=>callback());}})},
     ElementPlus:{ElMessage:message,ElMessageBox:{confirm:()=>Promise.resolve(),alert:()=>Promise.resolve()}},
     fetch:async (url,options={})=>{
       const method=options.method||'GET'; requests.push({url,method,body:options.body});
       const pathname=url.split('?')[0];
+      if(transport.respond) { const response=await transport.respond(url,options); if(response) return response; }
       if (loginError && pathname==='/api/auth/login') return {status:200,ok:true,json:async()=>({code:40101,data:null,message:loginError})};
-      if (expired && pathname==='/api/orders') return {status:401,ok:false,json:async()=>({})};
+      if (regError && pathname==='/api/auth/register') return {status:200,ok:true,json:async()=>({code:40901,data:null,message:regError})};
+      if (expired && ['/api/orders','/api/settings'].includes(pathname)) return {status:401,ok:false,json:async()=>({})};
       if (orderError && pathname==='/api/orders') return {status:200,ok:true,json:async()=>({code:50001,message:'Database unavailable'})};
       let data;
       if (pathname==='/api/auth/login' || pathname==='/api/auth/register') data={token:'new-test-session',role,name:'Test',account:'phase_test'};
@@ -101,6 +103,97 @@ test('guest: initialization and loaders make no protected requests',async()=>{
   assert.equal(requests.length,0);
 });
 
+test('changing status and role filters resets the requested page',async()=>{
+  assert.match(html,/v-model:page-size="s.orderSize"/);
+  for(const [role,filter,page,endpoint] of [['customer','orderFilter','orderPage','/api/orders'],['admin','userRoleFilter','userPage','/api/users']]) {
+    const {view,watchers,requests}=await boot({full:true,role});
+    view.s[page]=3;
+    const previous=watchers.map(w=>JSON.stringify(w.get()));
+    view.s[filter]=role==='customer'?'delivered':'物流员工';
+    requests.length=0;
+    for(let i=0;i<watchers.length;i++) if(JSON.stringify(watchers[i].get())!==previous[i]) await watchers[i]();
+    await settle();
+    assert.equal(view.s[page],1);
+    assert.ok(requests.some(r=>r.url.startsWith(endpoint+'?')&&new URL(r.url,'http://test').searchParams.get('page')==='1'));
+  }
+});
+
+test('voucher upload shares authentication handling without a JSON content type',async()=>{
+  const transport={};
+  const {view,requests}=await boot({full:true,role:'staff',transport});
+  view.s.voucherTask={id:42};
+  const file={name:'proof.png',raw:new Blob(['test'],{type:'image/png'})};
+  view.onVoucherFile(file,[file]);
+  transport.respond=async(url,options)=>{
+    if(url==='/api/tasks/42/voucher') {
+      assert.ok(options.body instanceof FormData);
+      assert.equal(options.headers['Content-Type'],undefined);
+      assert.equal(options.headers.Authorization,'Bearer test-session');
+      return {status:401,ok:false,json:async()=>({})};
+    }
+  };
+  await view.saveVoucher();
+  assert.equal(requests.filter(r=>r.url==='/api/tasks/42/voucher').length,1);
+  assert.equal(view.s.auth.logged,false);
+  assert.equal(view.s.auth.loginError,'登录已失效，请重新登录');
+});
+
+for(const status of [200,401]) test(`old session response ${status} cannot refill data or log out the new session`,async()=>{
+  const transport={};
+  const {view,messages}=await boot({full:true,transport});
+  let release;
+  transport.respond=()=>new Promise(resolve=>{release=resolve;});
+  const pending=view.loadOrders();
+  await view.doLogout(true);
+  transport.respond=null;
+  view.loginRef.value={validate:async()=>true};
+  view.s.auth.login={account:'next_user',pwd:'TestOnly123!'};
+  await view.submitLogin();await settle();
+  view.s.orderList=[];
+  const count=messages.length;
+  release({status,ok:status===200,json:async()=>({code:0,data:{list:[{no:'OLD_PRIVATE_ORDER'}],total:1}})});
+  await pending;
+  assert.equal(view.s.auth.logged,true);
+  assert.equal(view.s.orderList.length,0);
+  assert.equal(messages.length,count);
+});
+
+test('failed server logout does not claim successful revocation',async()=>{
+  const transport={};
+  const {view,messages}=await boot({full:true,transport});
+  transport.respond=async url=>{if(url==='/api/auth/logout') throw new Error('Network unavailable');};
+  await view.doLogout(false);await settle();
+  assert.equal(view.s.auth.logged,true);
+  assert.ok(messages.some(m=>m.level==='error'&&m.text.includes('Network unavailable')));
+  assert.ok(!messages.some(m=>m.level==='success'&&m.text.includes('已安全退出')));
+});
+
+test('successful logout waits for server revocation before clearing the session',async()=>{
+  const transport={};
+  const {view,messages}=await boot({full:true,transport});
+  let release;
+  transport.respond=()=>new Promise(resolve=>{release=resolve;});
+  const pending=view.doLogout(false);
+  assert.equal(view.s.auth.logged,true);
+  release({status:200,ok:true,json:async()=>({code:0,data:{ok:true}})});
+  await pending;
+  assert.equal(view.s.auth.logged,false);
+  assert.equal(view.CONFIG.TOKEN,'');
+  assert.ok(messages.some(m=>m.level==='success'&&m.text==='已安全退出登录'));
+});
+
+test('session guard also checks after a delayed JSON body finishes reading',async()=>{
+  const transport={};
+  const {view}=await boot({full:true,transport});
+  let release;
+  transport.respond=async()=>({status:200,ok:true,json:()=>new Promise(resolve=>{release=resolve;})});
+  const pending=view.loadOrders();await settle();
+  await view.doLogout(true);
+  release({code:0,data:{list:[{no:'OLD_PRIVATE_ORDER'}],total:1}});
+  await pending;
+  assert.equal(view.s.orderList.length,0);
+});
+
 test('login and registration initialize only implemented features',async()=>{
   for (const role of ['customer','staff']) {
     for (const action of ['login','register']) {
@@ -145,11 +238,43 @@ test('real implemented-endpoint errors remain visible',async()=>{
   assert.ok(messages.some(m=>m.level==='error'&&m.text.includes('Database unavailable')));
 });
 
-test('expired restored token clears session without recursive logout requests',async()=>{
-  const {view,requests,messages}=await boot({expired:true});
+test('expired restored token clears session and retains the reason inside the login form',async()=>{
+  for(const full of [false,true]) {
+    const {view,requests}=await boot({expired:true,full});
+    assert.equal(view.s.auth.logged,false);
+    assert.equal(requests.length,1);
+    assert.equal(view.s.auth.loginError,'登录已失效，请重新登录');
+    await settle();
+    assert.equal(view.s.auth.loginError,'登录已失效，请重新登录');
+  }
+});
+
+test('registration failure stays inside the form and retry can succeed',async()=>{
+  const {view}=await boot({restore:false,full:true,regError:'该用户名已被注册，请直接登录'});
+  view.regRef.value={validate:async()=>true};
+  view.s.auth.reg={account:'repair_demo',pwd:'TestOnly123!',role:'customer'};
+  await view.submitReg();
   assert.equal(view.s.auth.logged,false);
-  assert.equal(requests.length,1);
-  assert.ok(messages.some(m=>m.level==='error'&&m.text.includes('登录已失效')));
+  assert.equal(view.s.auth.submitting,false);
+  assert.equal(view.s.auth.regError,'该用户名已被注册，请直接登录');
+  assert.match(html, /<el-alert v-if="s.auth.regError"[^>]+:title="s.auth.regError"[^>]+:closable="false"/);
+  for(const field of ['account','pwd','pwd2']) assert.ok(html.includes(`v-model="s.auth.reg.${field}" @input="s.auth.regError=''"`));
+  const retry=await boot({restore:false,full:true});
+  retry.view.regRef.value={validate:async()=>true,clearValidate(){}};
+  retry.view.s.auth.regError='旧错误';
+  await retry.view.submitReg();
+  assert.equal(retry.view.s.auth.logged,true);
+  assert.equal(retry.view.s.auth.regError,'');
+});
+
+test('forgot password gives visible, accurate guidance for the current data source',async()=>{
+  for(const mock of [false,true]) {
+    const {view}=await boot({restore:false,full:true,mock});
+    view.forgotPwd();
+    assert.ok(view.s.auth.loginError);
+    assert.equal(view.s.auth.loginError.includes('123456'),mock);
+    if(!mock) assert.match(view.s.auth.loginError,/重置流程尚未开放/);
+  }
 });
 
 test('mock mode retains the full demo and does not call HTTP',async()=>{

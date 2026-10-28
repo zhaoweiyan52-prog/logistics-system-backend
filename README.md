@@ -2,11 +2,11 @@
 
 这是一个 Spring Boot + MySQL 项目，现已接通组员页面约定的全部 21 个接口：客户寄件、订单、签收反馈；员工任务、凭证、库存；管理员用户角色、统计报表。另增加用户启停、系统设置的 3 个接口，将原页面仅在浏览器修改的操作真正保存到数据库。原有路径和字段保留。
 
-**验证状态：H2 37 项测试通过（含云端代理回归）；本机 MySQL 8.0.46 原 35 项业务测试与增量升级检查通过，前端 17 项回归通过。Render Docker + Aiven MySQL 已上线，23 项公网接口检查通过；浏览器登录 403 修复及云端管理员验收进展见 [云端验证记录](docs/云端部署验证记录.md)。**
+**验证状态：本轮 H2 37 项测试、前端 26 项检查通过，隔离浏览器验证认证反馈修复。本机 MySQL 8.0.46 原 35 项业务测试与增量升级、Render Docker + Aiven 的 23 项公网接口检查为此前验证结果；本轮未重跑。认证提示修复尚未发布。历史线上证据见 [云端验证记录](docs/云端部署验证记录.md)。**
 
 **已有第一阶段数据库必须先执行增量升级，再启动新版。管理员首次启用、24 个接口、权限和业务边界见 [全功能对接与升级](docs/全功能对接与升级.md)。**
 
-本机 MySQL 使用 `F:\MYSQL\Server` 程序目录、`F:\MYSQL\Data` 数据目录和 `MySQL80Logistics` 服务。已有第一阶段四张表，在 Workbench 中选择 logistics 后执行 **`sql/03-full-features.sql`**，增加九张表并保留旧数据；不要重新初始化数据目录。全新数据库执行 01、02 即可。
+本机 MySQL 使用 `F:\MYSQL\Server` 程序目录、`F:\MYSQL\Data` 数据目录和 `MySQL80Logistics` 服务。本机和云端已有业务库均已升级到 13 张表，无需再次建表或初始化。仅旧第一阶段库执行 **`sql/03-full-features.sql`** 增量升级；全新数据库执行 01、02。
 
 升级、打包并启动后，打开 `http://localhost:8080/logistics-admin.html` 即可访问。可在项目目录执行下面命令启动；脚本读取 F 盘由 Windows 用户加密保护的项目账号凭证，不在仓库保存密码：
 
@@ -16,9 +16,9 @@
 
 下面的手动建库步骤供其他电脑首次配置参考。
 
-**先阅读 `docs/接口核对与待确认问题.md`。本机验证的结果和局限见 `docs/验证记录.md`。**
+当前功能与业务边界以 [全功能对接与升级](docs/全功能对接与升级.md) 为准；本轮缺口、bug 与验收见 [修缮清单与验证](docs/修缮清单与验证.md)。`docs/接口核对与待确认问题.md`、`docs/验证记录.md` 为第一阶段历史记录。
 
-免费公网部署见 [Render + Aiven MySQL说明](docs/免费部署-Render与Aiven.md)。Docker、Free套餐及cloud配置已准备；云端账号、数据库凭证和证书配置完成后才能创建并验证公网网址。
+免费公网部署见 [Render + Aiven MySQL说明](docs/免费部署-Render与Aiven.md)。现有站点已部署到 Render + Aiven；历史上线证据见 [云端验证记录](docs/云端部署验证记录.md)。本轮本机修复尚未发布。
 
 ## 1. 从你已经学过的 Java、MySQL 理解代码
 
@@ -106,7 +106,7 @@ SOURCE C:/Users/bet/Documents/ChatGPT/3200/sql/02-schema.sql;
 SHOW TABLES;
 ```
 
-应出现四张表：`app_users`、`auth_tokens`、`logistics_orders`、`order_traces`。用户名大小写敏感，与原 mock 的严格比较一致。建表脚本只对新库执行一次：索引不是重复执行迁移脚本。脚本没有 DROP，不会清空你的旧数据；若同名表已存在，应先核对结构。
+应出现 13 张表：`app_users`、`auth_tokens`、`logistics_orders`、`order_traces`、`user_access`、`order_feedback`、`logistics_tasks`、`task_vouchers`、`warehouses`、`warehouse_stock`、`inventory_records`、`system_settings`、`notifications`。用户名大小写敏感，与原 mock 的严格比较一致。建表脚本只对新库执行一次：索引不是重复执行迁移脚本。脚本没有 DROP，不会清空你的旧数据；若同名表已存在，应先核对结构。
 
 用数据库管理员创建一个应用账号，以下密码只是占位符，执行前请替换：
 
@@ -138,9 +138,7 @@ $env:DB_URL = 'jdbc:mysql://localhost:3306/logistics?useUnicode=true&characterEn
 
 浏览器打开：**http://localhost:8080/logistics-admin.html**。项目内这份页面已设置 `USE_MOCK:false`、`BASE:'/api'`，使用本地 Vue 3.4.38 / Element Plus 2.7.8 文件。原始页面完整保存在 `reference`，未修改外部原文件。
 
-项目页面默认启用 `PHASE_ONE:true`：登录及刷新后只加载已实现的订单接口，下单后不再请求统计。客户首页提供寄件、订单和轨迹入口，不显示尚未实现的统计、签收、反馈和通知；员工/管理员登录后显示功能说明页。真实模式不展示演示账号或角色切换入口，角色以实际登录账号为准。已实现接口的业务失败、HTTP错误及401仍会正常提示。
-
-后续完整后端就绪后，可在页面 CONFIG 中设置 `PHASE_ONE:false` 恢复完整模块界面。`USE_MOCK:true` 的演示模式仍保留完整功能，reference 中的原始页面没有修改。
+当前页面设置 `PHASE_ONE:false`，三个角色使用完整已实现模块；`USE_MOCK:false`、`BASE:'/api'`，同源调用真实后端。真实模式不展示演示账号或任意角色切换入口，角色以实际登录账号为准。登录、注册失败及会话过期在认证表单内显示原因。`USE_MOCK:true` 仅保留为独立演示模式；reference 中原始页面不代表当前实现。
 
 前端请求回归检查可执行（需要 Node.js）：
 

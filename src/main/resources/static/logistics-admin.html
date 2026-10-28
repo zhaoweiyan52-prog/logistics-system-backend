@@ -260,18 +260,18 @@
             </div>
             <el-form :model="s.auth.reg" :rules="regRules" ref="regRef" @keyup.enter="submitReg">
               <el-form-item prop="account">
-                <el-input v-model="s.auth.reg.account" size="large" placeholder="设置用户名（4-16 位字母、数字或下划线）" clearable>
+                <el-input v-model="s.auth.reg.account" @input="s.auth.regError=''" size="large" placeholder="设置用户名（4-16 位字母、数字或下划线）" clearable>
                   <template #prefix>👤</template>
                 </el-input>
               </el-form-item>
               <el-form-item prop="pwd">
-                <el-input v-model="s.auth.reg.pwd" size="large" type="password" show-password
+                <el-input v-model="s.auth.reg.pwd" @input="s.auth.regError=''" size="large" type="password" show-password
                   placeholder="设置密码（至少 6 位）" clearable>
                   <template #prefix>🔒</template>
                 </el-input>
               </el-form-item>
               <el-form-item prop="pwd2">
-                <el-input v-model="s.auth.reg.pwd2" size="large" type="password" show-password
+                <el-input v-model="s.auth.reg.pwd2" @input="s.auth.regError=''" size="large" type="password" show-password
                   placeholder="请再次输入密码" clearable>
                   <template #prefix>✅</template>
                 </el-input>
@@ -286,6 +286,7 @@
                 <el-checkbox v-model="s.auth.reg.agree">我已阅读并同意 <el-link type="primary" :underline="false">《用户服务协议》</el-link> 与 <el-link type="primary" :underline="false">《隐私政策》</el-link></el-checkbox>
               </el-form-item>
               <div class="ap-tip" v-if="CONFIG.USE_MOCK">演示环境注册的账号仅保存在当前页面内存中，刷新后失效；接入后端后会自动写入数据库。</div>
+              <el-alert v-if="s.auth.regError" :title="s.auth.regError" type="error" :closable="false" show-icon class="ap-login-error"></el-alert>
               <el-button class="ap-btn" type="primary" size="large" :loading="s.auth.submitting" @click="submitReg">
                 注 册 并 登 录
               </el-button>
@@ -600,7 +601,7 @@
         </el-table>
         <div class="pager">
           <el-pagination background layout="total, sizes, prev, pager, next" :total="s.orderTotal"
-            v-model:current-page="s.orderPage" :page-size="s.orderSize" :page-sizes="[10,20,50]" ></el-pagination>
+            v-model:current-page="s.orderPage" v-model:page-size="s.orderSize" :page-sizes="[10,20,50]" ></el-pagination>
         </div>
       </div>
     </template>
@@ -1123,9 +1124,10 @@ const mockDB = {
 /* 统一请求封装：超时控制 / Token / 业务错误码 / 数据归一化 */
 function req(path, opts) {
   opts = opts || {};
+  const token = CONFIG.TOKEN;
   const ctrl = new AbortController();
   const timer = setTimeout(function(){ ctrl.abort(); }, CONFIG.TIMEOUT);
-  const headers = { 'Content-Type': 'application/json' };
+  const headers = opts.body instanceof FormData ? {} : { 'Content-Type': 'application/json' };
   if (CONFIG.TOKEN) headers.Authorization = 'Bearer ' + CONFIG.TOKEN;
   Object.keys(opts.headers || {}).forEach(function(k){ headers[k] = opts.headers[k]; });
   return fetch(CONFIG.BASE + path, {
@@ -1135,17 +1137,21 @@ function req(path, opts) {
     signal: ctrl.signal
   }).then(function(r){
     clearTimeout(timer);
+    if (token !== CONFIG.TOKEN) throw Object.assign(new Error('会话已切换'), {name:'StaleSessionError'});
     if (r.status === 401) {
-      ElMessage.error('登录已失效，请重新登录');
       if (CONFIG.on401) CONFIG.on401();
       throw new Error('401 未授权');
     }
     if (!r.ok) throw new Error('HTTP ' + r.status);
     return r.json();
   }).then(function(j){
+    if (token !== CONFIG.TOKEN) throw Object.assign(new Error('会话已切换'), {name:'StaleSessionError'});
     if (j && j.code !== undefined && j.code !== 0) throw new Error(j.message || '业务错误 ' + j.code);
     return j && j.data !== undefined ? j.data : j;
   }).catch(function(e){
+    clearTimeout(timer);
+    // 退出或换账号后，旧响应不得回填数据或使新会话失效。
+    if (token !== CONFIG.TOKEN || e.name === 'StaleSessionError') throw Object.assign(new Error('会话已切换'), {name:'StaleSessionError'});
     throw new Error(e.name === 'AbortError' ? '请求超时' : e.message);
   });
 }
@@ -1312,14 +1318,7 @@ const api = {
       if (t) { t.voucher = true; t.status = 'done'; }
       return Promise.resolve({ ok: true });
     }
-    return fetch(CONFIG.BASE + '/tasks/' + id + '/voucher', {
-      method: 'POST',
-      headers: CONFIG.TOKEN ? { Authorization: 'Bearer ' + CONFIG.TOKEN } : {},
-      body: fd
-    }).then(function(r){
-      if(r.status===401){ if(CONFIG.on401) CONFIG.on401(); throw new Error('登录已失效'); }
-      if (!r.ok) throw new Error('HTTP ' + r.status); return r.json();
-    }).then(function(j){ if(j.code!==0) throw new Error(j.message||'上传失败'); return j.data; });
+    return req('/tasks/' + id + '/voucher', {method:'POST', body:fd});
   },
   /* 客户：下单 / 签收 / 反馈 */
   createOrder: function(data) {
@@ -1420,7 +1419,7 @@ createApp({
       role:'customer', active:'home', crumbParent:'',
       collapsed:false, searchKw:'', notifOpen:false,
       /* 认证态 */
-      auth:{ tab:'login', logged:false, remember:true, submitting:false, profileVisible:false, loginError:'',
+      auth:{ tab:'login', logged:false, remember:true, submitting:false, profileVisible:false, loginError:'', regError:'',
         user:{ name:'', account:'', role:'customer', loginAt:'' },
         login:{ account:'', pwd:'' },
         reg:{ account:'', pwd:'', pwd2:'', role:'customer', agree:false } },
@@ -1479,7 +1478,7 @@ createApp({
     /* ---------- 数据加载（统一走 api） ---------- */
     function laterStage(){ ElMessage.info('该功能将在后续阶段开放'); }
     function initialPage(role){ return phaseOne && role!=='customer' ? 'phaseIntro' : {customer:'home',staff:'work',admin:'dash'}[role]; }
-    function onFail(e){ ElMessage.error('请求失败：' + (e && e.message ? e.message : e)); return null; }
+    function onFail(e){ if(e && e.name==='StaleSessionError') return null; ElMessage.error('请求失败：' + (e && e.message ? e.message : e)); return null; }
     async function loadOrders(){
       if(!s.auth.logged) return;
       const r = await api.orders({kw:s.orderKw, status:s.orderFilter, page:s.orderPage, size:s.orderSize}).catch(onFail);
@@ -1549,15 +1548,17 @@ createApp({
     const reloadOrdersDebounced = debounce(function(){ s.orderPage = 1; loadOrders(); }, 300);
     const reloadUsersDebounced = debounce(function(){ s.userPage = 1; loadUsers(); }, 300);
 
-    watch(function(){ return [s.orderFilter, s.orderPage, s.orderSize]; }, loadOrders);
+    watch(function(){ return [s.orderPage, s.orderSize]; }, loadOrders);
     watch(function(){ return s.orderKw; }, reloadOrdersDebounced);
-    watch(function(){ return [s.userRoleFilter, s.userPage]; }, loadUsers);
+    watch(function(){ return s.userPage; }, loadUsers);
     watch(function(){ return s.userKw; }, reloadUsersDebounced);
     watch(function(){ return s.taskPage; }, loadTasks);
     watch(function(){ return s.taskFilter; }, function(){ s.taskPage=1;loadTasks(); });
     watch(function(){ return s.trackSel; }, loadTrack);
+    watch(function(){ return s.orderFilter; }, function(){ s.orderPage=1;loadOrders(); });
+    watch(function(){ return s.userRoleFilter; }, function(){ s.userPage=1;loadUsers(); });
     onMounted(function(){
-      CONFIG.on401 = function(){ doLogout(true); };
+      CONFIG.on401 = function(){ doLogout(true); s.auth.loginError = '登录已失效，请重新登录'; };
       const restored = restoreSession();
       if (!CONFIG.USE_MOCK) console.log('[物流系统] 后端地址 ' + CONFIG.BASE);
       if (!restored) console.log('[物流系统] 未检测到登录会话，展示登录页');
@@ -1791,6 +1792,7 @@ createApp({
       finally { s.auth.submitting = false; }
     }
     async function submitReg(){
+      s.auth.regError = '';
       const ok = await regRef.value.validate().catch(function(){ return false; });
       if (!ok) return;
       s.auth.submitting = true;
@@ -1801,7 +1803,7 @@ createApp({
         s.auth.reg = { account:'', pwd:'', pwd2:'', role:'customer', agree:false };
         if (regRef.value) regRef.value.clearValidate();
         if (s.role === 'admin') loadUsers();
-      } catch(e) { ElMessage.error(e.message || '注册失败，请重试'); }
+      } catch(e) { s.auth.regError = e.message || '注册失败，请重试'; }
       finally { s.auth.submitting = false; }
     }
     /* 演示账号一键填入 */
@@ -1816,11 +1818,13 @@ createApp({
       if (loginRef.value) loginRef.value.clearValidate();
     }
     function forgotPwd(){
-      ElMessageBox.alert('演示环境统一初始密码：<b>123456</b><br>正式环境请联系系统管理员重置密码。',
-        '找回密码', { confirmButtonText:'知道了', dangerouslyUseHTMLString:true });
+      s.auth.loginError = CONFIG.USE_MOCK ? '演示账号密码：123456' : '当前暂不支持自助找回密码，请确认注册时设置的密码；密码重置流程尚未开放。';
     }
-    function doLogout(quiet){
-      if(!quiet && CONFIG.TOKEN) api.logout().catch(function(){});
+    async function doLogout(quiet){
+      if(!quiet && CONFIG.TOKEN) {
+        try { await api.logout(); }
+        catch(e) { onFail(e); return; }
+      }
       clearSession();
       CONFIG.TOKEN = '';
       s.auth.logged = false;
@@ -1828,6 +1832,7 @@ createApp({
       s.auth.profileVisible = false;
       s.auth.login = { account:'', pwd:'' };
       s.auth.loginError = '';
+      s.auth.regError = '';
       s.auth.user = { name:'', account:'', role:'customer', loginAt:'' };
       s.orderList = []; s.orderTotal = 0; s.trackOrder = null; s.trackSel = ''; s.searchHits = [];
       s.waitSignList=[];s.signableList=[];s.latestList=[];s.stats={};s.weekList=[];s.monthList=[];
