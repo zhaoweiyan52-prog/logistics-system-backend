@@ -1,7 +1,7 @@
 # Logistics Management System
 
 Undergraduate Software Engineering Course Project: A web application that supports customers, logistics staff, and administrators.
-[Online Demo](https://logistics-system-backend-o7if.onrender.com/logistics-admin.html) · [Chinese Maintenance Instructions](README.zh-CN.md)
+[Online Demo](https://logistics-system-backend-o7if.onrender.com/logistics-admin.html) · [简体中文](README.zh-CN.md)
 
 ## Review Navigation
 
