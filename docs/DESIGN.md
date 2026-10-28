@@ -1,6 +1,6 @@
 # Design and Interface Specifications
 
-October 28, 2026 · [Back to README](../README.md) · [Requirements Baseline](SRS.md)
+October 28, 2026 · [Documentation index](README.md) · [Requirements baseline](SRS.md)
 
 ## Architecture
 
@@ -36,10 +36,10 @@ The complete DDL is [02-schema.sql](../sql/02-schema.sql); the incremental updat
 | app_users | Accounts, password hashes, and roles |
 | auth_tokens | Digests and expiration dates; associated with users |
 | user_access | User activation and deactivation |
-| logistics_orders | Shipping orders, owning users, fees, and status |
+| logistics_orders | Orders, owner IDs, fees, and status |
 | order_traces | Tracking events associated with shipping orders |
-| order_feedback | Up to one piece of feedback per shipment |
-| logistics_tasks | Process steps and actual operators for shipments |
+| order_feedback | Up to one piece of feedback per order |
+| logistics_tasks | Process steps and actual operators for orders |
 | task_vouchers | Task images and uploaders; primary keys are task_id and slot |
 | warehouses | Warehouse capacity and usage |
 | warehouse_stock | Unique inventory items composed of warehouses and items |
@@ -48,6 +48,97 @@ The complete DDL is [02-schema.sql](../sql/02-schema.sql); the incremental updat
 | notifications | User in-app notifications |
 
 A user can have multiple orders; an order can have multiple tasks and tracking events, with a maximum of one feedback entry; a task can have multiple images. There is no direct foreign key relationship between inventory and orders.
+
+### Core Entity Relationships
+
+This model shows the main business relationships. Authentication, account activation, notifications, settings, and operator/uploader links are omitted for readability. The SQL schema defines all tables and constraints.
+
+```mermaid
+erDiagram
+    app_users ||--o{ logistics_orders : owns
+    logistics_orders ||--o{ order_traces : has
+    logistics_orders ||--o| order_feedback : receives
+    logistics_orders ||--o{ logistics_tasks : generates
+    logistics_tasks ||--o{ task_vouchers : stores
+    warehouses ||--o{ warehouse_stock : contains
+    warehouses ||--o{ inventory_records : records
+    app_users {
+        bigint id PK
+        varchar account UK
+        varchar role
+    }
+    logistics_orders {
+        varchar no PK
+        bigint owner_id FK
+        varchar status
+    }
+    order_traces {
+        bigint id PK
+        varchar order_no FK
+    }
+    order_feedback {
+        varchar order_no PK, FK
+    }
+    logistics_tasks {
+        bigint id PK
+        varchar order_no FK
+        varchar status
+    }
+    task_vouchers {
+        bigint task_id PK, FK
+        int slot PK
+    }
+    warehouses {
+        varchar name PK
+        bigint used
+        bigint cap
+    }
+    warehouse_stock {
+        varchar wh PK, FK
+        varchar goods PK
+        bigint qty
+    }
+    inventory_records {
+        varchar no PK
+        varchar wh FK
+        bigint qty
+    }
+```
+
+The diagram shows database cardinalities. The application creates an initial tracking event and pickup task with each new order (FR-02). Stock is identified by the composite key `(wh, goods)`; it has no order reference (FR-08).
+
+## Order-Creation Sequence
+
+This sequence traces FR-02 through the existing [OrderController](../src/main/java/com/example/logistics/order/OrderController.java) and [OrderService](../src/main/java/com/example/logistics/order/OrderService.java). It shows a successful request; invalid tokens or input stop processing before the service is called.
+
+```mermaid
+sequenceDiagram
+    actor Customer
+    participant UI as Browser
+    participant Auth as ApiAuthFilter
+    participant Controller as OrderController
+    participant Service as OrderService
+    participant DB as MySQL via JdbcTemplate
+    Customer->>UI: Submit order details
+    UI->>Auth: POST /api/orders with Bearer token
+    Auth->>DB: Authenticate token and account
+    DB-->>Auth: CurrentUser
+    Auth->>Controller: Forward authenticated request
+    Note over Controller: Validate CreateOrder fields
+    Controller->>Service: create(currentUser, request)
+    Note over Service,DB: Transaction begins; require customer role
+    Service->>DB: Insert pending order owned by currentUser
+    Service->>DB: Insert initial tracking event
+    Service->>DB: Insert pickup task
+    Service->>DB: Read order details and related records
+    DB-->>Service: OrderView data
+    Note over Service,DB: Commit transaction
+    Service-->>Controller: OrderView
+    Controller-->>UI: HTTP 200 with code 0 and order data
+    UI-->>Customer: Show order confirmation
+```
+
+A failure within the transaction rolls back its writes. The browser does not choose the order owner; the service uses the authenticated user's ID (NFR-01). Pickup tasks currently use the destination address, as recorded in the SRS scope boundaries.
 
 ## Status Model
 
@@ -80,12 +171,12 @@ Each row in the table below represents a method-path combination; there are 24 i
 | GET | /stats/overview | Logged-in users; customers see only their own orders, staff/administrators see global statistics |
 | GET | /stats/weekly | Logged-in users; the meaning of the statistics depends on the role |
 | GET | /stats/monthly | Administrators |
-| GET | /tasks | Employees/Administrators; status, page, size |
-| POST | /tasks/{id}/status | Employees; status, note |
-| POST | /tasks/{id}/voucher | Employee; multipart files or files[], note |
-| GET | /inventory | Employee/Administrator; type |
-| POST | /inventory | Employee; type, goods, qty, wh |
-| GET | /warehouses | Employee/Administrator |
+| GET | /tasks | Staff/Administrators; status, page, size |
+| POST | /tasks/{id}/status | Staff; status, note |
+| POST | /tasks/{id}/voucher | Staff; multipart files or files[], note |
+| GET | /inventory | Staff/Administrator; type |
+| POST | /inventory | Staff; type, goods, qty, wh |
+| GET | /warehouses | Staff/Administrator |
 | GET | /users | Administrator; kw, role, page, size |
 | PATCH | /users/{id}/role | Administrator; role |
 | POST | /users/batch-role | Administrator; role, ids |
@@ -94,7 +185,7 @@ Each row in the table below represents a method-path combination; there are 24 i
 | GET | /settings | Logged-in user |
 | PUT | /settings | Administrator; Complete settings object |
 
-Login and registration return token, role, name, and account. Paginated lists return list and total; page starts at 1, with a default size of 10 and a maximum of 100. Order lists are sorted in reverse chronological order by creation time; orders with the same creation time are sorted by waybill number.
+Login and registration return token, role, name, and account. Paginated lists return list and total; page starts at 1, with a default size of 10 and a maximum of 100. Order lists are sorted in reverse chronological order by creation time; orders with the same creation time are sorted by tracking number.
 The settings object includes name, phone, notice, first, firstFee, addFee, signNtf, excNtf, and mktNtf. Registration roles are `customer` or `staff`. The `role` in the user list uses Chinese labels: `客户`, `物流员工`, `系统管理员`; role modifications are compatible with these labels and the internal English identifiers. Tasks include the compatible field `orderStatus`.
 See [OrderModels.java](../src/main/java/com/example/logistics/order/OrderModels.java), [OperationsModels.java](../src/main/java/com/example/logistics/operations/OperationsModels.java), and [AuthController.java](../src/main/java/com/example/logistics/auth/AuthController.java). The retained [original API documentation](../reference/API_CONTRACT.md) is historical information and does not override the newly added interfaces.
 

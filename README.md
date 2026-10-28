@@ -5,6 +5,7 @@ Undergraduate Software Engineering Course Project: A web application that suppor
 
 ## Review Navigation
 
+- [Documentation index and course checklist](docs/README.md): Reading order, supporting records, and submission requirements from the supplied brief.
 - [Requirements Specification](docs/SRS.md): Current requirements baseline, business rules, scope limitations, and acceptance criteria.
 - [Design and Interfaces](docs/DESIGN.md): Architecture, data model, state transitions, and 24 API operations.
 - [Verification and Evolution](docs/VERIFICATION.md): Test evidence, fix logs, and demonstration steps.
