@@ -2,6 +2,19 @@
 
 November 4, 2026. This record supplements the tester's report; it does not close B03 or replace independent retesting.
 
+## Follow-up: Copied Order Number Confirmed
+
+The tester supplied a revised resolved URL ending in `SF202611040B49093BF9514EFB3F95533B12F6706`. Using the dedicated test account from the uploaded collection, the developer queried the public history endpoint with `kw=SF202611040B49093B`, then queried both the supplied number and the exact number returned by history, using one unchanged customer token.
+
+| Source | Number | Length | Detail result |
+|---|---|---|---|
+| Tester-supplied URL | `SF202611040B49093BF9514EFB3F95533B12F6706` | 41 | `40401` |
+| Actual history response | `SF202611040B49093BF9514EFFB3F95533B12F6706` | 42 | `0`; returned the same number |
+
+The supplied number omitted one `F`: `F9514EFB` should be `F9514EFFB`. History returned exactly one matching order. This confirms a copied-number error for this revised request, rather than a list/detail ownership inconsistency. The exact original B03 request remains part of the tester's historical report; this follow-up does not reconstruct every earlier request.
+
+The verification session used account `testuser01`, role `customer`, and was logged out afterwards. No business records were changed and no credentials were recorded. B03 stays Open pending the tester's confirmation with the exact history number. Use the collection's saved `orderNo` to avoid manual copying.
+
 ## Findings
 
 Both list and detail queries restrict customer results using the authenticated user's ID. The exported collection already uses `GET /api/orders/{{orderNo}}` and saves `data.no` after creation. The export alone does not establish which URL, variable scope, or account was used in the failing request.
