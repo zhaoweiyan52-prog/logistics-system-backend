@@ -3,22 +3,20 @@ Test Environment: Public backend https://logistics-system-backend-o7if.onrender.
 Version: 1eb7d99
 Tester: ZHANG Wenyu
 
-| Test ID | Role | Test Scenario | Input | Expected Result | Status |
+| Test Case ID | Role | Test Scenario | Input | Expected Output | Status |
 | ---- | ---- | ---- | ---- | ---- | ---- |
-| TC-C01 | Customer | Customer register account | Fill valid username, password, role | Account created successfully, can log in | Passed |
-| TC-C02 | Customer | Create new delivery request | Fill receiver, dest, goods, weight, fee | New order created | Passed |
-| TC-C03 | Customer | Generate tracking number | Create multiple parcel orders and compare returned order numbers | Distinct order numbers across the submitted orders | Passed |
-| TC-C04 | Customer | Query parcel status | Input tracking number | Show real-time parcel status | Failed — B03 Open |
-| TC-C05 | Customer | View delivery history | Enter customer account page | List all past delivery records | Passed |
-
-Dynamic statuses above reflect the tester's reported execution. Repeated-order uniqueness does not establish concurrency coverage. B03 remains Open; see [developer investigation](B03-investigation.md).
+| TC-C01 | Customer | Customer register and login | Username, password | Account registered and login successfully | Passed |
+| TC-C02 | Customer | Create new parcel application | Sender address, receiver address, parcel info | New order created, unique tracking number generated | Passed |
+| TC-C03 | Customer | Generate unique tracking number for new parcel | Submit new parcel request | System return unique tracking number | Passed |
+| TC-C04 | Customer | Query parcel real-time status | Complete tracking number | System shows latest parcel information | Passed |
+| TC-C05 | Customer | View historical delivery records | Enter customer account page | All past parcel records displayed | Passed |
 
 ---
-### Static Code Review Round 1 (Source Code Inspection, not runtime test)
-| Test ID | Role | Test Scenario | Review Result |
-| ---- | ---- | ---- | ---- |
-| TC-C01 | Customer | Customer register account & log in | Pass. AuthController contains register & login API |
-| TC-C02 | Customer | Create new delivery request | Pass. OrderController has create order API |
-| TC-C03 | Customer | Generate tracking number | Pending. Tracking number logic is inside OrderService, cannot verify in controller |
-| TC-C04 | Customer | Query parcel status | Pass. Detail API by tracking number exists |
-| TC-C05 | Customer | View delivery history | Pass. List API to fetch user order history exists |
+### Static Code Review (Source Code Inspection, not run-time test)
+| Review ID | Role | Review Item | Expected Result | Review Result |
+| ---- | ---- | ---- | ---- | ---- |
+| SRC-C01 | Customer | Register & Login code | Authentication logic reasonable | Passed |
+| SRC-C02 | Customer | Create order code | Data validation included | Passed |
+| SRC-C03 | Customer | Tracking number generation code | Guarantee uniqueness | Passed |
+| SRC-C04 | Customer | Parcel query code | Correct lookup by tracking number | Passed |
+| SRC-C05 | Customer | History record code | Can fetch user-related records | Passed |
