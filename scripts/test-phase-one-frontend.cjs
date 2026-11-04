@@ -12,11 +12,12 @@ test('in-DOM Vue components use explicit end tags so table columns do not become
   assert.doesNotMatch(html, /<el-[\w-]+\b(?:"[^"]*"|'[^']*'|[^'">])*\/>/);
 });
 
-async function boot({ role='customer', restore=true, expired=false, orderError=false, loginError='', regError='', mock=false, full=false, transport={}, language='zh-CN' }={}) {
+async function boot({ role='customer', restore=true, expired=false, orderError=false, loginError='', regError='', mock=false, full=false, transport={}, language='zh-CN', guestLanguage='' }={}) {
   let view;
   const requests=[], messages=[], mounted=[], watchers=[];
   const values = new Map();
   values.set('ls_locale:phase_test',language);
+  if(guestLanguage) values.set('ls_locale_guest',guestLanguage);
   if (restore) {
     values.set('ls_token', 'test-session');
     values.set('ls_user', JSON.stringify({account:'phase_test',name:'Test',role}));
@@ -106,6 +107,27 @@ test('language preferences are isolated between accounts and survive logout',asy
   assert.equal(values.get('ls_locale:other_user'),'en');
   view.setLocale('unsupported');
   assert.equal(view.locale.value,'zh-CN');
+});
+
+for(const saved of [null,'zh-TW']) test(`guest choice survives login; saved account preference ${saved} takes priority`,async()=>{
+  const {view,values,requests}=await boot({restore:false,full:true,guestLanguage:'en'});
+  assert.equal(view.locale.value,'en');
+  view.s.auth.login={account:'phase_test',pwd:'Synthetic123!'};
+  view.s.auth.reg={account:'new_test',pwd:'Synthetic456!',pwd2:'Synthetic456!',role:'customer',agree:true};
+  const login=JSON.stringify(view.s.auth.login),reg=JSON.stringify(view.s.auth.reg);
+  view.setLocale('zh-TW');view.setLocale('en');
+  assert.equal(JSON.stringify(view.s.auth.login),login);
+  assert.equal(JSON.stringify(view.s.auth.reg),reg);
+  assert.equal(values.get('ls_locale_guest'),'en');
+  assert.equal(requests.length,0);
+  if(saved) values.set('ls_locale:phase_test',saved); else values.delete('ls_locale:phase_test');
+  view.loginRef.value={validate:async()=>true,clearValidate(){}};
+  await view.submitLogin();
+  assert.equal(view.s.auth.loginError,'');
+  assert.equal(view.locale.value,saved||'en');
+  assert.equal(values.get('ls_locale:phase_test'),saved||'en');
+  await view.doLogout(true);
+  assert.equal(view.locale.value,'en');
 });
 
 test('translated messages retain interpolation, server reasons and staff notes',async()=>{

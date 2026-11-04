@@ -29,7 +29,7 @@ The system supports an educational logistics workflow. It does not connect to a 
 | FR-09 | Administrators shall be able to search accounts, assign roles, and enable or disable accounts. | Batch role changes succeed or roll back together. Role changes and disabling an account revoke its existing tokens. The last enabled administrator cannot be disabled or demoted. |
 | FR-10 | The system shall provide authorized statistics and notifications. | Customer statistics cover only their orders; administrators can read monthly reports. Notifications contain the user's events and enabled system announcements. |
 | FR-11 | Administrators shall be able to save system settings; authenticated users shall be able to read them. | Saved values are returned on a subsequent read. Customer and staff attempts to change settings are rejected. |
-| FR-12 | All authenticated roles shall be able to select Simplified Chinese, Traditional Chinese, or English from the top-right navigation. | Labels, statuses, known system messages, and component controls change without reloading or clearing forms. The browser remembers the preference separately for each account. User content and API values remain unchanged. |
+| FR-12 | Visitors on login/registration pages and all authenticated roles shall be able to select Simplified Chinese, Traditional Chinese, or English. | Labels, statuses, known system messages, and component controls change without reloading or clearing forms. The browser remembers guest and account preferences separately. On login, a saved account preference takes priority; otherwise the guest choice is inherited. User content and API values remain unchanged. |
 
 ## 4. Quality Constraints
 

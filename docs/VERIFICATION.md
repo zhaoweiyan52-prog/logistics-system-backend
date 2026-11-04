@@ -4,6 +4,8 @@ Updated November 4, 2026 · [Documentation index](README.md) · [Requirements](S
 
 ## November 4 Language Update
 
+Login/registration follow-up: the suite now passes **33** frontend tests. Browser checks also cover guest language persistence, login/register input preservation, account preference priority, and clean initial validation state. See [the updated language record](LANGUAGE.md). The 31-test result below describes the initial authenticated-page release.
+
 The frontend script suite now passes 31 tests, including account-specific language persistence, form preservation, canonical API values, and translated messages. Local Edge browser checks passed for all three roles in all three languages, with synthetic API responses. Dialogs, tracking selection, search suggestions, settings tabs, and pagination were also checked. Maven packaging succeeded with all 37 H2 tests passing on JDK 24.0.1. See [the language record](LANGUAGE.md) for reproduction commands and limits. The records below retain their original dates; the tester's Postman suite is a separate pending activity.
 
 ## Evidence and Limitations

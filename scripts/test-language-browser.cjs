@@ -40,6 +40,36 @@ const server=http.createServer((req,res)=>{
   const browser=await chromium.launch({channel:'msedge',headless:true});
   const errors=[],results=[];
   try {
+    const guestContext=await browser.newContext({viewport:{width:1440,height:1000}});
+    const guest=await guestContext.newPage();guest.on('pageerror',error=>errors.push(error.message));
+    await guest.route('**/api/**',()=>{throw new Error('Guest language changes must not request the API');});
+    await guest.goto(`http://127.0.0.1:${server.address().port}/logistics-admin.html`);
+    const guestSelect=guest.locator('.auth-language select');
+    await guestSelect.selectOption('en');
+    const loginInputs=guest.locator('#pane-login input');
+    await loginInputs.nth(0).fill('demo_user');await loginInputs.nth(1).fill('Synthetic123!');
+    for(const language of ['zh-TW','zh-CN','en']) {
+      await guestSelect.selectOption(language);
+      assert.equal(await loginInputs.nth(0).inputValue(),'demo_user');
+      assert.equal(await loginInputs.nth(1).inputValue(),'Synthetic123!');
+    }
+    await guest.getByRole('tab',{name:messages.en['注册账号'],exact:true}).click();
+    const regInputs=guest.locator('#pane-reg input');
+    await regInputs.nth(0).fill('new_user');await regInputs.nth(1).fill('Synthetic456!');await regInputs.nth(2).fill('Synthetic456!');
+    await guestSelect.selectOption('zh-TW');await guestSelect.selectOption('en');
+    assert.equal(await regInputs.nth(0).inputValue(),'new_user');
+    assert.equal(await regInputs.nth(1).inputValue(),'Synthetic456!');
+    assert.equal(await regInputs.nth(2).inputValue(),'Synthetic456!');
+    await guest.reload();await guestSelect.waitFor();
+    assert.equal(await guestSelect.inputValue(),'en');
+    await guest.evaluate(()=>new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve))));
+    assert.equal(await guest.locator('.auth-panel .el-form-item.is-error').count(),0,'Restoring the language must not validate untouched forms');
+    await guest.screenshot({path:path.join(out,'login-en.png'),animations:'disabled'});
+    await guest.setViewportSize({width:800,height:900});
+    assert.equal(await guestSelect.isVisible(),true);
+    await guest.screenshot({path:path.join(out,'login-en-narrow.png'),animations:'disabled'});
+    results.push('guest: login/register languages, form preservation and refresh passed');
+    await guestContext.close();
     for(const role of ['customer','staff','admin']) {
       const context=await browser.newContext({viewport:{width:1440,height:1000}});
       const page=await context.newPage();page.on('pageerror',error=>errors.push(error.message));
