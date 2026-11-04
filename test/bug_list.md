@@ -9,8 +9,6 @@ Latest B03 follow-up: the tester's revised URL omitted one `F` from the actual h
 
 | Bug ID | API Endpoint | Method | Request Body / Param | Expected Result | Actual Response | Reproduction Steps | Status |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
-| B01 | /api/orders | POST | {<br>    "receiver": "Bob",<br>    "dest": "HKMU",<br>    "goods": "books",<br>    "weight": 1.2,<br>    "fee": 25<br>} | System generates unique tracking number for each parcel | Multiple orders created, all order no are distinct | 1. Register and login<br>2. Create several orders repeatedly<br>3. Check generated order no | Passed |
-| B02 | /api/orders | POST | {<br>    "receiver": "Bob",<br>    "dest": "HKMU",<br>    "goods": "books",<br>    "weight": 1.2,<br>    "fee": 25<br>} | code=0, parcel created successfully, return order no | {<br>  "code": 0,<br>  "data": {<br>    "no": "SF20261104A5EC426BDB294F3AAA0013EAFA91576D",<br>    "goods": "books",<br>    "dest": "HKMU",<br>    "receiver": "Bob",<br>    "fee": 25.00,<br>    "weight": 1.200,<br>    "status": "pending",<br>    "time": "2026-11-04T06:37:44.860020Z",<br>    "eta": "2026-11-07T06:37:44.860020Z",<br>    "signCode": "1425",<br>    "traces": []<br>  },<br>  "message": "成功"<br>} | 1. Register testuser01 and login<br>2. Obtain Bearer token<br>3. Send POST request with valid parcel data | Fixed |
 | B01 | Customer | New parcel order can be created and unique tracking number generated | N/A | Passed | Verified |
 | B02 | Customer | Customer history record can be displayed normally | N/A | Passed | Verified |
 | B03 | Customer | Query parcel detail return 404 even with correct order | Typo / incomplete tracking number when copying | Fixed | Verified by tester. Full correct tracking number works. |
