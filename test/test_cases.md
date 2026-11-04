@@ -1,4 +1,8 @@
 # Logistics System Test Cases
+Test Environment: Public backend https://logistics-system-backend-o7if.onrender.com
+Version: 1eb7d99
+Tester: ZHANG Wenyu
+
 | Test ID | Role | Test Scenario | Input | Expected Result | Status |
 | ---- | ---- | ---- | ---- | ---- | ---- |
 | TC-C01 | Customer | Customer register account | Fill valid username, password, role | Account created successfully, can log in | Not Executed |
