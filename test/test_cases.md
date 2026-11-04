@@ -3,7 +3,7 @@
 | ---- | ---- | ---- | ---- | ---- | ---- |
 | TC-C01 | Customer | Customer register account | Fill valid username, password, role | Account created successfully, can log in | Not Executed |
 | TC-C02 | Customer | Create new delivery request | Fill receiver, dest, goods, weight, fee | New order created | Not Executed |
-| TC-C03 | Customer | Generate tracking number | Submit new parcel order | Unique tracking number generated (Logic in OrderService, check UUID duplication by dynamic test) | Not Executed |
+| TC-C03 | Customer | Generate tracking number | Submit new parcel order, run concurrent test, check UUID and DB primary key constraint | No duplicate tracking number, no database primary key conflict | Not Executed |
 | TC-C04 | Customer | Query parcel status | Input tracking number | Show real-time parcel status | Not Executed |
 | TC-C05 | Customer | View delivery history | Enter customer account page | List all past delivery records | Not Executed |
 ---

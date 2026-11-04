@@ -93,7 +93,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Create parcel success, save tracking number\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.environment.set(\"trackingNo\", jsonData.data.trackingNo);\n});"
+              "pm.test(\"Create parcel success and get order no\", function () {\n    pm.response.to.have.status(200);\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.environment.set(\"orderNo\", jsonData.data.no);\n});"
             ]
           }
         }
@@ -121,14 +121,13 @@
           }
         },
         "url": {
-          "raw": "{{baseUrl}}/api/parcel/create",
+          "raw": "{{baseUrl}}/api/orders",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
-            "parcel",
-            "create"
+            "orders"
           ]
         }
       },
@@ -142,7 +141,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Get parcel status successfully\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.expect(jsonData.data.trackingNo).to.eql(pm.environment.get(\"trackingNo\"));\n});"
+              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Get parcel status successfully\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n});"
             ]
           }
         }
@@ -161,20 +160,14 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/parcel/track?trackingNo={{trackingNo}}",
+          "raw": "{{baseUrl}}/api/orders/{{orderNo}}",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
             "api",
-            "parcel",
-            "track"
-          ],
-          "query": [
-            {
-              "key": "trackingNo",
-              "value": "{{trackingNo}}"
-            }
+            "orders",
+            "{{orderNo}}"
           ]
         }
       },
@@ -207,14 +200,13 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "{{baseUrl}}/api/parcel/history",
+          "raw": "GET {{baseUrl}}/api/orders",
           "host": [
-            "{{baseUrl}}"
+            "GET {{baseUrl}}"
           ],
           "path": [
             "api",
-            "parcel",
-            "history"
+            "orders"
           ]
         }
       },
