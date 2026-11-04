@@ -38,3 +38,7 @@ Recorded result: **nine role/language combinations passed** in local headless Ed
 Maven packaging also succeeded with **37 H2 tests passed**, using JDK 24.0.1 and Maven 3.9.11. The sandboxed attempt stalled during Mockito attachment and was stopped; the completed run used normal local process permissions and the isolated test profile.
 
 These checks are not a rerun of the tester's Postman suite or a complete production workflow. This change does not modify Java code, database schemas, or stored records. Full narrow-screen and cross-browser acceptance remain separate tasks.
+
+## Public Release Check
+
+Application commit `00e577f` became live on Render on November 4, 2026, at 05:05:33 UTC (13:05:33 China Standard Time), deployment `dep-dblbp55bedkc73a4jmqg`. Read-only checks returned health `UP` and HTTP 200 for the page, translation dictionary, and all three component locale files. Their contents matched the local release after normalizing line endings. No production business records were created or modified for these checks. Refresh the public page with Ctrl+F5 if an older version remains cached.
