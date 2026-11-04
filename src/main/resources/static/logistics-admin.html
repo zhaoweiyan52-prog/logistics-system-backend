@@ -7,6 +7,10 @@
 <link rel="stylesheet" href="vendor/element-plus.css">
 <script src="vendor/vue.global.prod.js"></script>
 <script src="vendor/element-plus.full.min.js"></script>
+<script src="vendor/element-plus-locale-zh-cn.min.js"></script>
+<script src="vendor/element-plus-locale-zh-tw.min.js"></script>
+<script src="vendor/element-plus-locale-en.min.js"></script>
+<script src="logistics-i18n.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:"PingFang SC","Microsoft YaHei",sans-serif;background:#f1f5f9;height:100vh;overflow:hidden;}
@@ -184,118 +188,127 @@
     .ap-demo-b:hover{transform:none;}
     .auth-wrap{transition:none;}
   }
+  .language-select{font:inherit;font-size:13px;padding:6px 9px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#334155;max-width:125px;}
+  .language-select:focus-visible{outline:2px solid #2563eb;outline-offset:2px;}
+  .m-item{white-space:normal;}
+  .el-table .cell{word-break:normal;}
+  .el-tag{white-space:normal;height:auto;min-height:24px;}
+  .el-dialog{max-width:calc(100vw - 32px);}
+  @media(max-width:1100px){.top-search{max-width:260px;min-width:120px;}.logo-name{max-width:210px;overflow:hidden;text-overflow:ellipsis;}.topbar{gap:10px;}.top-right{gap:8px;}}
+  @media(max-width:760px){.top-search,.logo-name{display:none;}.topbar{padding:0 10px;}.role-tag{padding:4px;}}
 </style>
 </head>
 <body>
 <div id="app" v-cloak>
+<el-config-provider :locale="elementLocale">
 
   <!-- ============ 登录 / 注册 ============ -->
-  <div class="auth-mask" v-if="!s.auth.logged" role="dialog" aria-label="账号登录">
+  <div class="auth-mask" v-if="!s.auth.logged" role="dialog" :aria-label="t('账号登录')">
     <div class="auth-wrap">
       <!-- 品牌区 -->
       <div class="auth-brand">
         <div class="ab-inner">
           <div class="ab-logo">
             <div class="ab-logo-icon">🚚</div>
-            <span>物流管理系统</span>
+            <span>{{ t('物流管理系统') }}</span>
           </div>
-          <div class="ab-title">让每一次寄递<br>都可追踪 · 可信赖</div>
-          <div class="ab-desc">覆盖揽收、干线、派送、签收全链路的数字化管理平台，支持客户自助、员工协同与管理员统一管控三种业务视角。</div>
+          <div class="ab-title">{{ t('让每一次寄递') }}<br>{{ t('都可追踪 · 可信赖') }}</div>
+          <div class="ab-desc">{{ t('覆盖揽收、干线、派送、签收全链路的数字化管理平台，支持客户自助、员工协同与管理员统一管控三种业务视角。') }}</div>
           <div class="ab-line">
-            <div class="ab-item"><span class="ab-ico">🛰️</span>全程轨迹可视化，节点状态实时同步</div>
-            <div class="ab-item"><span class="ab-ico">🏭</span>智能仓储调度，六仓容量动态预警</div>
-            <div class="ab-item"><span class="ab-ico">🔐</span>三权分立角色体系，数据按角色隔离</div>
+            <div class="ab-item"><span class="ab-ico">🛰️</span>{{ t('全程轨迹可视化，节点状态实时同步') }}</div>
+            <div class="ab-item"><span class="ab-ico">🏭</span>{{ t('智能仓储调度，六仓容量动态预警') }}</div>
+            <div class="ab-item"><span class="ab-ico">🔐</span>{{ t('三权分立角色体系，数据按角色隔离') }}</div>
           </div>
           <div class="ab-stats" v-if="CONFIG.USE_MOCK">
-            <div class="ab-stat"><b>1,286</b><span>服务网点</span></div>
-            <div class="ab-stat"><b>8.6万</b><span>日均运单</span></div>
-            <div class="ab-stat"><b>98.7%</b><span>准时送达率</span></div>
+            <div class="ab-stat"><b>1,286</b><span>{{ t('服务网点') }}</span></div>
+            <div class="ab-stat"><b>{{ t('8.6万') }}</b><span>{{ t('日均运单') }}</span></div>
+            <div class="ab-stat"><b>98.7%</b><span>{{ t('准时送达率') }}</span></div>
           </div>
-          <div class="ab-foot">© 2026 物流管理系统 · 小组课程项目</div>
+          <div class="ab-foot">{{ t('© 2026 物流管理系统 · 小组课程项目') }}</div>
         </div>
       </div>
       <!-- 表单区 -->
       <div class="auth-panel">
         <el-tabs v-model="s.auth.tab">
-          <el-tab-pane label="账号登录" name="login">
+          <el-tab-pane :label="t('账号登录')" name="login">
             <div class="ap-head">
-              <div class="ap-title">欢迎回来 👋</div>
-              <div class="ap-sub">登录后继续管理您的运单与包裹</div>
+              <div class="ap-title">{{ t('欢迎回来 👋') }}</div>
+              <div class="ap-sub">{{ t('登录后继续管理您的运单与包裹') }}</div>
             </div>
             <el-form :model="s.auth.login" :rules="loginRules" ref="loginRef" @keyup.enter="submitLogin">
               <el-form-item prop="account">
-                <el-input v-model="s.auth.login.account" @input="s.auth.loginError=''" size="large" placeholder="请输入用户名" clearable>
+                <el-input v-model="s.auth.login.account" @input="s.auth.loginError=''" size="large" :placeholder="t('请输入用户名')" clearable>
                   <template #prefix>👤</template>
                 </el-input>
               </el-form-item>
               <el-form-item prop="pwd">
                 <el-input v-model="s.auth.login.pwd" @input="s.auth.loginError=''" size="large" type="password" show-password
-                  placeholder="请输入密码" clearable>
+                  :placeholder="t('请输入密码')" clearable>
                   <template #prefix>🔒</template>
                 </el-input>
               </el-form-item>
               <div class="ap-row">
-                <el-checkbox v-model="s.auth.remember">记住登录状态</el-checkbox>
-                <el-link type="primary" :underline="false" style="font-size:13px" @click="forgotPwd">忘记密码？</el-link>
+                <el-checkbox v-model="s.auth.remember">{{ t('记住登录状态') }}</el-checkbox>
+                <el-link type="primary" :underline="false" style="font-size:13px" @click="forgotPwd">{{ t('忘记密码？') }}</el-link>
               </div>
-              <el-alert v-if="s.auth.loginError" :title="s.auth.loginError" type="error" :closable="false" show-icon class="ap-login-error"></el-alert>
+              <el-alert v-if="s.auth.loginError" :title="systemText(s.auth.loginError)" type="error" :closable="false" show-icon class="ap-login-error"></el-alert>
               <el-button class="ap-btn" type="primary" size="large" :loading="s.auth.submitting" @click="submitLogin">
-                登 录
+                {{ t('登 录') }}
               </el-button>
             </el-form>
             <div class="ap-demo" v-if="CONFIG.USE_MOCK">
-              <div class="ap-demo-t">💡 演示账号（点击一键填入，密码统一 123456）</div>
+              <div class="ap-demo-t">{{ t('💡 演示账号（点击一键填入，密码统一 123456）') }}</div>
               <div class="ap-demo-btns">
-                <div class="ap-demo-b" @click="fillDemo('customer')">👤 客户 · 张三</div>
-                <div class="ap-demo-b" @click="fillDemo('staff')">🧑‍✈️ 物流员工 · 李师傅</div>
-                <div class="ap-demo-b" @click="fillDemo('admin')">🛠️ 管理员 · 王主任</div>
+                <div class="ap-demo-b" @click="fillDemo('customer')">{{ t('👤 客户 · 张三') }}</div>
+                <div class="ap-demo-b" @click="fillDemo('staff')">{{ t('🧑‍✈️ 物流员工 · 李师傅') }}</div>
+                <div class="ap-demo-b" @click="fillDemo('admin')">{{ t('🛠️ 管理员 · 王主任') }}</div>
               </div>
             </div>
           </el-tab-pane>
 
-          <el-tab-pane label="注册账号" name="reg">
+          <el-tab-pane :label="t('注册账号')" name="reg">
             <div class="ap-head">
-              <div class="ap-title">创建账号 ✨</div>
-              <div class="ap-sub">只需设置用户名和密码，10 秒完成注册</div>
+              <div class="ap-title">{{ t('创建账号 ✨') }}</div>
+              <div class="ap-sub">{{ t('只需设置用户名和密码，10 秒完成注册') }}</div>
             </div>
             <el-form :model="s.auth.reg" :rules="regRules" ref="regRef" @keyup.enter="submitReg">
               <el-form-item prop="account">
-                <el-input v-model="s.auth.reg.account" @input="s.auth.regError=''" size="large" placeholder="设置用户名（4-16 位字母、数字或下划线）" clearable>
+                <el-input v-model="s.auth.reg.account" @input="s.auth.regError=''" size="large" :placeholder="t('设置用户名（4-16 位字母、数字或下划线）')" clearable>
                   <template #prefix>👤</template>
                 </el-input>
               </el-form-item>
               <el-form-item prop="pwd">
                 <el-input v-model="s.auth.reg.pwd" @input="s.auth.regError=''" size="large" type="password" show-password
-                  placeholder="设置密码（至少 6 位）" clearable>
+                  :placeholder="t('设置密码（至少 6 位）')" clearable>
                   <template #prefix>🔒</template>
                 </el-input>
               </el-form-item>
               <el-form-item prop="pwd2">
                 <el-input v-model="s.auth.reg.pwd2" @input="s.auth.regError=''" size="large" type="password" show-password
-                  placeholder="请再次输入密码" clearable>
+                  :placeholder="t('请再次输入密码')" clearable>
                   <template #prefix>✅</template>
                 </el-input>
               </el-form-item>
               <el-form-item prop="role">
                 <el-radio-group v-model="s.auth.reg.role" style="width:100%">
-                  <el-radio-button value="customer">我是客户</el-radio-button>
-                  <el-radio-button value="staff">我是物流员工</el-radio-button>
+                  <el-radio-button value="customer">{{ t('我是客户') }}</el-radio-button>
+                  <el-radio-button value="staff">{{ t('我是物流员工') }}</el-radio-button>
                 </el-radio-group>
               </el-form-item>
               <el-form-item prop="agree">
-                <el-checkbox v-model="s.auth.reg.agree">我已阅读并同意 <el-link type="primary" :underline="false">《用户服务协议》</el-link> 与 <el-link type="primary" :underline="false">《隐私政策》</el-link></el-checkbox>
+                <el-checkbox v-model="s.auth.reg.agree">{{ t('我已阅读并同意') }} <el-link type="primary" :underline="false">{{ t('《用户服务协议》') }}</el-link> {{ t('与') }} <el-link type="primary" :underline="false">{{ t('《隐私政策》') }}</el-link></el-checkbox>
               </el-form-item>
-              <div class="ap-tip" v-if="CONFIG.USE_MOCK">演示环境注册的账号仅保存在当前页面内存中，刷新后失效；接入后端后会自动写入数据库。</div>
-              <el-alert v-if="s.auth.regError" :title="s.auth.regError" type="error" :closable="false" show-icon class="ap-login-error"></el-alert>
+              <div class="ap-tip" v-if="CONFIG.USE_MOCK">{{ t('演示环境注册的账号仅保存在当前页面内存中，刷新后失效；接入后端后会自动写入数据库。') }}</div>
+              <el-alert v-if="s.auth.regError" :title="systemText(s.auth.regError)" type="error" :closable="false" show-icon class="ap-login-error"></el-alert>
               <el-button class="ap-btn" type="primary" size="large" :loading="s.auth.submitting" @click="submitReg">
-                注 册 并 登 录
+                {{ t('注 册 并 登 录') }}
               </el-button>
             </el-form>
           </el-tab-pane>
         </el-tabs>
         <div class="ap-foot">
-          登录即表示您已阅读并同意平台服务条款<br>
-          {{ CONFIG.USE_MOCK ? '当前为演示环境，数据源：内置模拟数据' : '当前数据源：后端接口 ' + CONFIG.BASE }}
+          {{ t('登录即表示您已阅读并同意平台服务条款') }}<br>
+          {{ CONFIG.USE_MOCK ? t('当前为演示环境，数据源：内置模拟数据') : t('当前数据源：后端接口 ') + CONFIG.BASE }}
         </div>
       </div>
     </div>
@@ -303,31 +316,36 @@
 
   <!-- 顶部导航栏 -->
   <div class="topbar">
-    <div class="tag-mock" v-if="CONFIG.USE_MOCK" title="当前使用内置演示数据">MOCK 数据</div>
+    <div class="tag-mock" v-if="CONFIG.USE_MOCK" :title="t('当前使用内置演示数据')">{{ t('MOCK 数据') }}</div>
     <div class="logo">
       <div class="logo-icon">🚚</div>
-      <div class="logo-name">{{ s.setForm.name }}</div>
+      <div class="logo-name">{{ s.setForm.name==='物流管理系统' ? t('物流管理系统') : s.setForm.name }}</div>
     </div>
     <div class="top-search" v-if="!phaseOne || s.role==='customer'">
-      <el-input v-model="s.searchKw" placeholder="搜索运单号 / 物品" clearable
+      <el-input v-model="s.searchKw" :placeholder="t('搜索运单号 / 物品')" clearable
         @keyup.enter="goSearch" @input="onSearchInput">
         <template #prefix>🔍</template>
       </el-input>
-      <div class="search-hits" v-if="s.searchKw && searchHits.length">
-        <div class="search-hit" v-for="o in searchHits" :key="o.no" @click="trackOrder(o)">
+      <div class="search-hits" v-if="s.searchKw && s.searchHits.length">
+        <div class="search-hit" v-for="o in s.searchHits" :key="o.no" @click="trackOrder(o)">
           <span>{{ o.no }} · {{ o.goods }}</span>
           <span class="sub">{{ stText(o.status) }} · {{ o.dest }}</span>
         </div>
       </div>
     </div>
     <div class="top-right">
+      <select v-if="s.auth.logged" class="language-select" :value="locale" @change="setLocale($event.target.value)" :aria-label="t('语言')" :title="t('语言')">
+        <option value="zh-CN">简体中文</option>
+        <option value="zh-TW">繁體中文</option>
+        <option value="en">English</option>
+      </select>
       <el-dropdown v-if="CONFIG.USE_MOCK" @command="switchRole" trigger="click">
         <span class="role-tag">{{ roleText }} ▾</span>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="customer" :class="{on: s.role==='customer'}">👤 客户</el-dropdown-item>
-            <el-dropdown-item command="staff" :class="{on: s.role==='staff'}">🧑‍✈️ 物流员工</el-dropdown-item>
-            <el-dropdown-item command="admin" :class="{on: s.role==='admin'}">🛠️ 系统管理员</el-dropdown-item>
+            <el-dropdown-item command="customer" :class="{on: s.role==='customer'}">{{ t('👤 客户') }}</el-dropdown-item>
+            <el-dropdown-item command="staff" :class="{on: s.role==='staff'}">{{ t('🧑‍✈️ 物流员工') }}</el-dropdown-item>
+            <el-dropdown-item command="admin" :class="{on: s.role==='admin'}">{{ t('🛠️ 系统管理员') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -337,8 +355,8 @@
         <div class="notif-item" v-for="n in s.notices" :key="n.id" :class="{unread:!n.read}" @click="readNotice(n)">
           <span style="font-size:18px">{{ n.icon }}</span>
           <div>
-            <div class="notif-title">{{ n.title }}</div>
-            <div class="notif-desc">{{ n.desc }} · {{ n.time }}</div>
+            <div class="notif-title">{{ t(n.title) }}</div>
+            <div class="notif-desc">{{ n.id===0 ? n.desc : systemText(n.desc) }} · {{ t(n.time) }}</div>
           </div>
         </div>
       </el-popover>
@@ -350,9 +368,9 @@
         </div>
         <template #dropdown>
           <el-dropdown-menu>
-            <el-dropdown-item command="profile">👤 个人中心</el-dropdown-item>
-            <el-dropdown-item command="switch">🔄 切换账号</el-dropdown-item>
-            <el-dropdown-item command="logout" divided>⏻ 退出登录</el-dropdown-item>
+            <el-dropdown-item command="profile">{{ t('👤 个人中心') }}</el-dropdown-item>
+            <el-dropdown-item command="switch">{{ t('🔄 切换账号') }}</el-dropdown-item>
+            <el-dropdown-item command="logout" divided>{{ t('⏻ 退出登录') }}</el-dropdown-item>
           </el-dropdown-menu>
         </template>
       </el-dropdown>
@@ -363,13 +381,13 @@
   <div class="sidebar" :class="{collapsed: s.collapsed}">
     <div class="menu">
       <div class="m-item" v-for="m in menus" :key="m.k" :class="{active: s.active===m.k}"
-        @click="go(m.k)" :title="m.t">
+        @click="go(m.k)" :title="t(m.t)">
         <span class="m-icon">{{ m.i }}</span>
-        <span class="m-label">{{ m.t }}</span>
+        <span class="m-label">{{ t(m.t) }}</span>
       </div>
     </div>
     <div class="sidebar-bottom">
-      <button class="collapse-btn" @click="s.collapsed=!s.collapsed" :title="s.collapsed?'展开':'收起'">
+      <button class="collapse-btn" @click="s.collapsed=!s.collapsed" :title="s.collapsed?t('展开'):t('收起')">
         {{ s.collapsed ? '»' : '«' }}
       </button>
     </div>
@@ -378,30 +396,30 @@
   <!-- 主内容 -->
   <div class="main" :class="{expanded: s.collapsed}">
     <div class="breadcrumb">
-      <span>首页</span><span>›</span>
-      <span v-if="s.crumbParent">{{ s.crumbParent }}</span><span v-if="s.crumbParent">›</span>
+      <span>{{ t('首页') }}</span><span>›</span>
+      <span v-if="s.crumbParent">{{ t(s.crumbParent) }}</span><span v-if="s.crumbParent">›</span>
       <span class="cur">{{ pageTitle }}</span>
     </div>
     <div class="page-title">{{ pageTitle }}</div>
     <el-alert v-if="s.auth.logged && s.setForm.notice && !phaseOne" :title="s.setForm.notice" type="info" :closable="false" style="margin-bottom:16px"></el-alert>
 
     <el-alert v-if="phaseOne" type="info" :closable="false" show-icon style="margin-bottom:18px"
-      title="第一阶段功能" description="现已开放客户寄件、订单查询和轨迹查看；签收、反馈、统计及员工管理功能将在后续阶段开放。"></el-alert>
+      :title="t('第一阶段功能')" :description="t('现已开放客户寄件、订单查询和轨迹查看；签收、反馈、统计及员工管理功能将在后续阶段开放。')"></el-alert>
 
     <div v-if="phaseOne && s.active==='phaseIntro'" class="card">
-      <div class="card-title">{{ roleText }}功能暂未开放</div>
-      <p>当前账号已登录成功。任务、库存、报表和用户管理功能将在后续阶段开放。</p>
-      <p>如需体验寄件和订单查询，请退出当前账号，并注册或登录客户账号。</p>
-      <el-button @click="onUserCmd('switch')">切换账号</el-button>
+      <div class="card-title">{{ t('{role}功能暂未开放', {role:roleText}) }}</div>
+      <p>{{ t('当前账号已登录成功。任务、库存、报表和用户管理功能将在后续阶段开放。') }}</p>
+      <p>{{ t('如需体验寄件和订单查询，请退出当前账号，并注册或登录客户账号。') }}</p>
+      <el-button @click="onUserCmd('switch')">{{ t('切换账号') }}</el-button>
     </div>
 
     <div v-if="phaseOne && s.active==='home' && s.role==='customer'" class="card">
-      <div class="card-title">欢迎使用物流管理系统</div>
-      <p>你可以创建寄件订单，查询自己的订单和物流轨迹。</p>
+      <div class="card-title">{{ t('欢迎使用物流管理系统') }}</div>
+      <p>{{ t('你可以创建寄件订单，查询自己的订单和物流轨迹。') }}</p>
       <div class="quick-grid">
-        <div class="quick-item" @click="go('send')"><div class="quick-icon">📦</div><div class="quick-text">立即寄件</div></div>
-        <div class="quick-item" @click="go('orders')"><div class="quick-icon">📋</div><div class="quick-text">我的订单</div></div>
-        <div class="quick-item" @click="go('track')"><div class="quick-icon">🔍</div><div class="quick-text">包裹追踪</div></div>
+        <div class="quick-item" @click="go('send')"><div class="quick-icon">📦</div><div class="quick-text">{{ t('立即寄件') }}</div></div>
+        <div class="quick-item" @click="go('orders')"><div class="quick-icon">📋</div><div class="quick-text">{{ t('我的订单') }}</div></div>
+        <div class="quick-item" @click="go('track')"><div class="quick-icon">🔍</div><div class="quick-text">{{ t('包裹追踪') }}</div></div>
       </div>
     </div>
 
@@ -409,51 +427,51 @@
     <template v-if="!phaseOne && s.active==='home' && s.role==='customer'">
       <div class="stat-grid">
         <div class="stat-card clickable" @click="go('orders')">
-          <div class="stat-label">累计寄件</div>
+          <div class="stat-label">{{ t('累计寄件') }}</div>
           <div class="stat-value">{{ s.stats.total || 0 }}</div>
-          <div class="stat-sub">本人累计订单总数</div>
+          <div class="stat-sub">{{ t('本人累计订单总数') }}</div>
         </div>
         <div class="stat-card clickable" @click="go('track')">
-          <div class="stat-label">在途包裹</div>
+          <div class="stat-label">{{ t('在途包裹') }}</div>
           <div class="stat-value">{{ s.stats.inTransit || 0 }}</div>
-          <div class="stat-sub">运输中 / 派送中</div>
+          <div class="stat-sub">{{ t('运输中 / 派送中') }}</div>
         </div>
         <div class="stat-card clickable" @click="go('orders')">
-          <div class="stat-label">已签收</div>
+          <div class="stat-label">{{ t('已签收') }}</div>
           <div class="stat-value">{{ s.stats.delivered || 0 }}</div>
-          <div class="stat-sub">感谢您的信任</div>
+          <div class="stat-sub">{{ t('感谢您的信任') }}</div>
         </div>
         <div class="stat-card">
-          <div class="stat-label">累计运费</div>
+          <div class="stat-label">{{ t('累计运费') }}</div>
           <div class="stat-value">¥{{ (s.stats.revenue||0).toFixed(0) }}</div>
-          <div class="stat-sub">不含已取消运单</div>
+          <div class="stat-sub">{{ t('不含已取消运单') }}</div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">待我签收
-          <el-button size="small" text type="primary" @click="go('track')">全部 ›</el-button>
+        <div class="card-title">{{ t('待我签收') }}
+          <el-button size="small" text type="primary" @click="go('track')">{{ t('全部 ›') }}</el-button>
         </div>
         <el-table :data="s.waitSignList" size="default" v-loading="s.loading">
-          <el-table-column label="运单号" min-width="170">
+          <el-table-column :label="t('运单号')" min-width="170">
             <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
           </el-table-column>
-          <el-table-column label="物品" prop="goods" min-width="130" ></el-table-column>
-          <el-table-column label="预计送达" width="150">
+          <el-table-column :label="t('物品')" prop="goods" min-width="130" ></el-table-column>
+          <el-table-column :label="t('预计送达')" :width="locale==='en' ? 155 : 150">
             <template #default="{row}"><span class="cell-sub">{{ fmt(row.eta) }}</span></template>
           </el-table-column>
-          <el-table-column label="操作" width="110">
+          <el-table-column :label="t('操作')" :width="locale==='en' ? 155 : 110">
             <template #default="{row}">
-              <el-button size="small" type="primary" @click="trackOrder(row)">去签收</el-button>
+              <el-button size="small" type="primary" @click="trackOrder(row)">{{ t('去签收') }}</el-button>
             </template>
           </el-table-column>
         </el-table>
       </div>
       <div class="card">
-        <div class="card-title">快捷入口</div>
+        <div class="card-title">{{ t('快捷入口') }}</div>
         <div class="quick-grid">
-          <div class="quick-item" @click="go('send')"><div class="quick-icon">📦</div><div class="quick-text">立即寄件</div></div>
-          <div class="quick-item" @click="go('track')"><div class="quick-icon">🔍</div><div class="quick-text">包裹追踪</div></div>
-          <div class="quick-item" @click="go('orders')"><div class="quick-icon">📋</div><div class="quick-text">我的订单</div></div>
+          <div class="quick-item" @click="go('send')"><div class="quick-icon">📦</div><div class="quick-text">{{ t('立即寄件') }}</div></div>
+          <div class="quick-item" @click="go('track')"><div class="quick-icon">🔍</div><div class="quick-text">{{ t('包裹追踪') }}</div></div>
+          <div class="quick-item" @click="go('orders')"><div class="quick-icon">📋</div><div class="quick-text">{{ t('我的订单') }}</div></div>
         </div>
       </div>
     </template>
@@ -461,25 +479,25 @@
     <!-- ============ 客户：寄件 ============ -->
     <template v-if="s.active==='send' && s.role==='customer'">
       <div class="card" style="max-width:640px">
-        <div class="card-title">在线下单</div>
-        <el-form label-width="90px">
-          <el-form-item label="收件人"><el-input v-model="s.sendForm.to" placeholder="收件人姓名" ></el-input></el-form-item>
-          <el-form-item label="收件地址"><el-input v-model="s.sendForm.dest" placeholder="省市区 + 详细地址" ></el-input></el-form-item>
-          <el-form-item label="物品类型">
+        <div class="card-title">{{ t('在线下单') }}</div>
+        <el-form label-width="auto">
+          <el-form-item :label="t('收件人')"><el-input v-model="s.sendForm.to" :placeholder="t('收件人姓名')" ></el-input></el-form-item>
+          <el-form-item :label="t('收件地址')"><el-input v-model="s.sendForm.dest" :placeholder="t('省市区 + 详细地址')" ></el-input></el-form-item>
+          <el-form-item :label="t('物品类型')">
             <el-select v-model="s.sendForm.goods" style="width:100%">
-              <el-option v-for="g in goodsList" :key="g" :label="g" :value="g" ></el-option>
+              <el-option v-for="g in goodsList" :key="g" :label="t(g)" :value="g" ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="重量">
+          <el-form-item :label="t('重量')">
             <el-input-number v-model="s.sendForm.weight" :min="0.5" :max="50" :step="0.5" ></el-input-number> kg
           </el-form-item>
-          <el-form-item label="预估运费">
+          <el-form-item :label="t('预估运费')">
             <span style="font-size:20px;font-weight:700;color:#2563eb">¥{{ sendPrice.toFixed(2) }}</span>
-            <span style="font-size:12px;color:#94a3b8;margin-left:8px">首重 1kg ¥12，续重 ¥4/kg</span>
+            <span style="font-size:12px;color:#94a3b8;margin-left:8px">{{ t('首重 {weight}kg ¥{fee}，续重 ¥{extra}/kg', {weight:s.setForm.first,fee:s.setForm.firstFee,extra:s.setForm.addFee}) }}</span>
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="submitSend">提交订单</el-button>
-            <el-button @click="resetSend">重置</el-button>
+            <el-button type="primary" @click="submitSend">{{ t('提交订单') }}</el-button>
+            <el-button @click="resetSend">{{ t('重置') }}</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -487,12 +505,12 @@
 
     <!-- ============ 客户：包裹追踪（右栏含签收确认） ============ -->
     <template v-if="s.active==='track' && s.role==='customer'">
-      <div :style="{display:'grid',gridTemplateColumns:phaseOne?'minmax(0,1fr)':'1fr 360px',gap:'16px',alignItems:'start'}">
+      <div :style="{display:'grid',gridTemplateColumns:phaseOne?'minmax(0,1fr)':'minmax(0,1fr) minmax(360px,0.8fr)',gap:'16px',alignItems:'start'}">
         <div class="card">
-          <div class="card-title">物流轨迹</div>
+          <div class="card-title">{{ t('物流轨迹') }}</div>
           <el-select v-model="s.trackSel" style="width:100%;margin-bottom:18px"
-            placeholder="选择运单号">
-            <el-option v-for="o in orders" :key="o.no" :value="o.no"
+            :placeholder="t('选择运单号')">
+            <el-option v-for="o in s.orderList" :key="o.no" :value="o.no"
               :label="o.no + ' · ' + o.goods + ' · ' + stText(o.status)" ></el-option>
           </el-select>
           <div v-if="s.trackOrder">
@@ -505,44 +523,44 @@
             </div>
             <div style="margin-bottom:14px" v-if="!phaseOne && s.trackOrder.status==='delivering'">
               <el-alert type="warning" :closable="false" show-icon
-                title="包裹正在派送，请留意签收码" :description="'签收码：' + s.trackOrder.signCode" ></el-alert>
+                :title="t('包裹正在派送，请留意签收码')" :description="t('签收码：') + s.trackOrder.signCode" ></el-alert>
             </div>
-            <div v-for="(t,i) in s.trackOrder.traces" :key="i" class="trace-item">
+            <div v-for="(trace,i) in s.trackOrder.traces" :key="i" class="trace-item">
               <div class="trace-line">
-                <div class="trace-dot" :class="{done: t.done}"></div>
+                <div class="trace-dot" :class="{done: trace.done}"></div>
                 <div class="trace-bar" v-if="i < s.trackOrder.traces.length-1"></div>
               </div>
               <div style="padding-bottom:16px">
-                <div class="trace-text" :style="t.done?'color:#0f172a;font-weight:500':''">{{ t.txt }}</div>
-                <div class="trace-time">{{ fmt(t.t) }}</div>
+                <div class="trace-text" :style="trace.done?'color:#0f172a;font-weight:500':''">{{ systemText(trace.txt) }}</div>
+                <div class="trace-time">{{ fmt(trace.t) }}</div>
               </div>
             </div>
           </div>
-          <el-empty v-else description="请选择运单查看轨迹" ></el-empty>
+          <el-empty v-else :description="t('请选择运单查看轨迹')" ></el-empty>
         </div>
         <div class="card" v-if="!phaseOne">
-          <div class="card-title">签收确认</div>
-          <el-form label-width="70px">
-            <el-form-item label="运单">
-              <el-select v-model="s.signForm.no" style="width:100%" placeholder="选择待签收运单">
+          <div class="card-title">{{ t('签收确认') }}</div>
+          <el-form label-width="auto">
+            <el-form-item :label="t('运单')">
+              <el-select v-model="s.signForm.no" style="width:100%" :placeholder="t('选择待签收运单')">
                 <el-option v-for="o in s.signableList" :key="o.no" :label="o.no + ' · ' + o.goods" :value="o.no" ></el-option>
               </el-select>
             </el-form-item>
-            <el-form-item label="签收码">
-              <el-input v-model="s.signForm.code" placeholder="快递员提供的签收码" maxlength="4" ></el-input>
+            <el-form-item :label="t('签收码')">
+              <el-input v-model="s.signForm.code" :placeholder="t('快递员提供的签收码')" maxlength="4" ></el-input>
             </el-form-item>
-            <el-form-item label="签收人">
+            <el-form-item :label="t('签收人')">
               <el-radio-group v-model="s.signForm.by">
-                <el-radio value="本人">本人</el-radio>
-                <el-radio value="代收点">代收点</el-radio>
-                <el-radio value="他人">他人</el-radio>
+                <el-radio value="本人">{{ t('本人') }}</el-radio>
+                <el-radio value="代收点">{{ t('代收点') }}</el-radio>
+                <el-radio value="他人">{{ t('他人') }}</el-radio>
               </el-radio-group>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" style="width:100%" @click="confirmSign">确认签收</el-button>
+              <el-button type="primary" style="width:100%" @click="confirmSign">{{ t('确认签收') }}</el-button>
             </el-form-item>
           </el-form>
-          <div class="cell-sub" style="margin-top:4px">签收成功后可直接对本次服务进行评价。</div>
+          <div class="cell-sub" style="margin-top:4px">{{ t('签收成功后可直接对本次服务进行评价。') }}</div>
         </div>
       </div>
     </template>
@@ -551,50 +569,50 @@
     <template v-if="s.active==='orders' && s.role==='customer'">
       <div class="card">
         <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-          <el-input v-model="s.orderKw" placeholder="搜索运单号 / 物品" style="width:240px" clearable>
+          <el-input v-model="s.orderKw" :placeholder="t('搜索运单号 / 物品')" style="width:240px" clearable>
             <template #prefix>🔍</template>
           </el-input>
-          <el-select v-model="s.orderFilter" style="width:150px" placeholder="全部状态" clearable>
-            <el-option v-for="st in statusList" :key="st.v" :label="st.t" :value="st.v" ></el-option>
+          <el-select v-model="s.orderFilter" style="width:190px" :placeholder="t('全部状态')" clearable>
+            <el-option v-for="st in statusList" :key="st.v" :label="t(st.t)" :value="st.v" ></el-option>
           </el-select>
-          <el-button @click="resetOrderFilter">重置</el-button>
+          <el-button @click="resetOrderFilter">{{ t('重置') }}</el-button>
           <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">
-            共 {{ s.orderTotal }} 单<span v-if="!phaseOne"> · 已反馈 {{ s.stats.fbCount || 0 }} 条</span>
+            {{ t('共 {count} 单', {count:s.orderTotal}) }}<span v-if="!phaseOne"> · {{ t('已反馈 {count} 条', {count:s.stats.fbCount || 0}) }}</span>
           </span>
         </div>
         <el-table :data="s.orderList" @row-click="trackOrder" style="cursor:pointer" v-loading="s.loading">
-          <el-table-column label="运单号" min-width="175">
+          <el-table-column :label="t('运单号')" min-width="175">
             <template #default="{row}">
               <div class="cell-main">{{ row.no }}</div>
-              <div class="cell-sub">下单 {{ fmt(row.time) }}</div>
+              <div class="cell-sub">{{ t('下单') }} {{ fmt(row.time) }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="物品 / 收件地" min-width="210">
+          <el-table-column :label="t('物品 / 收件地')" min-width="210">
             <template #default="{row}">
               <div class="cell-main">{{ row.goods }}</div>
               <div class="cell-sub">{{ row.dest }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="110">
+          <el-table-column :label="t('状态')" :width="locale==='en' ? 155 : 110">
             <template #default="{row}">
               <el-tag :type="stTag(row.status)" size="small">{{ stText(row.status) }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="运费" width="100">
+          <el-table-column :label="t('运费')" :width="locale==='en' ? 155 : 100">
             <template #default="{row}"><span class="cell-fee">¥{{ row.fee.toFixed(2) }}</span></template>
           </el-table-column>
-          <el-table-column v-if="!phaseOne" label="意见反馈" width="120">
+          <el-table-column v-if="!phaseOne" :label="t('意见反馈')" :width="locale==='en' ? 155 : 120">
             <template #default="{row}">
-              <el-tag v-if="s.fbMap[row.no]" type="success" size="small">{{ s.fbMap[row.no].type }}</el-tag>
-              <span v-else class="cell-sub">未反馈</span>
+              <el-tag v-if="s.fbMap[row.no]" type="success" size="small">{{ t(s.fbMap[row.no].type) }}</el-tag>
+              <span v-else class="cell-sub">{{ t('未反馈') }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="150" fixed="right">
+          <el-table-column :label="t('操作')" :width="locale==='en' ? 155 : 150" fixed="right">
             <template #default="{row}">
-              <el-button link type="primary" @click.stop="trackOrder(row)">追踪</el-button>
+              <el-button link type="primary" @click.stop="trackOrder(row)">{{ t('追踪') }}</el-button>
               <template v-if="!phaseOne">
-                <el-button v-if="!s.fbMap[row.no]" link type="primary" @click.stop="openFeedback(row)">写反馈</el-button>
-                <el-button v-else link @click.stop="openFeedback(row, true)">查看反馈</el-button>
+                <el-button v-if="!s.fbMap[row.no]" link type="primary" @click.stop="openFeedback(row)">{{ t('写反馈') }}</el-button>
+                <el-button v-else link @click.stop="openFeedback(row, true)">{{ t('查看反馈') }}</el-button>
               </template>
             </template>
           </el-table-column>
@@ -609,41 +627,41 @@
     <!-- ============ 员工：工作台 ============ -->
     <template v-if="s.active==='work' && s.role==='staff'">
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">当前待办</div><div class="stat-value">{{ s.taskTotal }}</div><div class="stat-sub">员工共用任务池</div></div>
-        <div class="stat-card"><div class="stat-label">已完成</div><div class="stat-value">{{ s.stats.tasksDone || 0 }}</div><div class="stat-sub">累计完成的流程任务</div></div>
-        <div class="stat-card"><div class="stat-label">凭证待上传</div><div class="stat-value">{{ s.stats.noVoucher || 0 }}</div><div class="stat-sub">签收后需回传凭证</div></div>
-        <div class="stat-card"><div class="stat-label">本月派件</div><div class="stat-value">{{ s.stats.monthDeliver || 0 }}</div><div class="stat-sub">本月下单且派送中或已签收</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('当前待办') }}</div><div class="stat-value">{{ s.taskTotal }}</div><div class="stat-sub">{{ t('员工共用任务池') }}</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('已完成') }}</div><div class="stat-value">{{ s.stats.tasksDone || 0 }}</div><div class="stat-sub">{{ t('累计完成的流程任务') }}</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('凭证待上传') }}</div><div class="stat-value">{{ s.stats.noVoucher || 0 }}</div><div class="stat-sub">{{ t('签收后需回传凭证') }}</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('本月派件') }}</div><div class="stat-value">{{ s.stats.monthDeliver || 0 }}</div><div class="stat-sub">{{ t('本月下单且派送中或已签收') }}</div></div>
       </div>
       <div class="card">
-        <div class="card-title">待办任务</div>
+        <div class="card-title">{{ t('待办任务') }}</div>
         <el-select v-model="s.taskFilter" style="width:160px;margin-bottom:12px">
-          <el-option label="待处理" value="todo" ></el-option><el-option label="已完成" value="done" ></el-option><el-option label="全部任务" value="" ></el-option>
+          <el-option :label="t('待处理')" value="todo" ></el-option><el-option :label="t('已完成')" value="done" ></el-option><el-option :label="t('全部任务')" value="" ></el-option>
         </el-select>
         <el-table :data="s.taskList" v-loading="s.loading">
-          <el-table-column label="运单号" min-width="170">
+          <el-table-column :label="t('运单号')" min-width="170">
             <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
           </el-table-column>
-          <el-table-column label="任务类型" width="100">
-            <template #default="{row}"><el-tag size="small" :type="row.type==='上门揽收'?'warning':'primary'">{{ row.type }}</el-tag></template>
+          <el-table-column :label="t('任务类型')" :width="locale==='en' ? 155 : 100">
+            <template #default="{row}"><el-tag size="small" :type="row.type==='上门揽收'?'warning':'primary'">{{ t(row.type) }}</el-tag></template>
           </el-table-column>
-          <el-table-column label="地址" prop="addr" min-width="180" ></el-table-column>
-          <el-table-column label="时间" width="150">
+          <el-table-column :label="t('地址')" prop="addr" min-width="180" ></el-table-column>
+          <el-table-column :label="t('时间')" :width="locale==='en' ? 155 : 150">
             <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
           </el-table-column>
-          <el-table-column label="状态" width="90">
+          <el-table-column :label="t('状态')" :width="locale==='en' ? 155 : 90">
             <template #default="{row}">
-              <el-tag size="small" :type="row.status==='todo'?'info':'success'">{{ row.status==='todo'?'待处理':'已完成' }}</el-tag>
+              <el-tag size="small" :type="row.status==='todo'?'info':'success'">{{ row.status==='todo'?t('待处理'):t('已完成') }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="200" fixed="right">
+          <el-table-column :label="t('操作')" :width="locale==='en' ? 270 : 200" fixed="right">
             <template #default="{row}">
               <template v-if="row.status==='todo'">
-                <el-button size="small" type="primary" @click="openStatus(row)">状态更新</el-button>
-                <el-button v-if="CONFIG.USE_MOCK || (row.type==='派送' && ['delivering','delivered'].includes(row.orderStatus))" size="small" @click="openVoucher(row)">上传凭证</el-button>
+                <el-button size="small" type="primary" @click="openStatus(row)">{{ t('状态更新') }}</el-button>
+                <el-button v-if="CONFIG.USE_MOCK || (row.type==='派送' && ['delivering','delivered'].includes(row.orderStatus))" size="small" @click="openVoucher(row)">{{ t('上传凭证') }}</el-button>
               </template>
               <template v-else>
-                <span class="cell-sub">已完成{{ row.voucher ? ' · 有凭证' : '' }}</span>
-                <el-button v-if="!row.voucher && row.type==='派送' && row.orderStatus==='delivered'" size="small" @click="openVoucher(row)">补传凭证</el-button>
+                <span class="cell-sub">{{ t(row.voucher ? '已完成 · 有凭证' : '已完成') }}</span>
+                <el-button v-if="!row.voucher && row.type==='派送' && row.orderStatus==='delivered'" size="small" @click="openVoucher(row)">{{ t('补传凭证') }}</el-button>
               </template>
             </template>
           </el-table-column>
@@ -658,19 +676,19 @@
     <!-- ============ 员工：状态更新（隐藏页） ============ -->
     <template v-if="s.active==='status' && s.role==='staff'">
       <div class="card" style="max-width:560px">
-        <el-button text @click="go('work')">‹ 返回工作台</el-button>
-        <div class="card-title" style="margin-top:8px">更新运单状态
+        <el-button text @click="go('work')">{{ t('‹ 返回工作台') }}</el-button>
+        <div class="card-title" style="margin-top:8px">{{ t('更新运单状态') }}
           <el-tag v-if="s.statusForm.task" size="small">{{ s.statusForm.task.no }}</el-tag>
         </div>
-        <el-form label-width="90px">
-          <el-form-item label="最新状态">
+        <el-form label-width="auto">
+          <el-form-item :label="t('最新状态')">
             <el-select v-model="s.statusForm.status" style="width:100%">
               <el-option v-for="st in statusOptions" :key="st" :label="stText(st)" :value="st" ></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="备注"><el-input v-model="s.statusForm.note" type="textarea" :rows="3" placeholder="选填" ></el-input></el-form-item>
+          <el-form-item :label="t('备注')"><el-input v-model="s.statusForm.note" type="textarea" :rows="3" :placeholder="t('选填')" ></el-input></el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="saveStatus">保存并完成任务</el-button>
+            <el-button type="primary" @click="saveStatus">{{ t('保存并完成任务') }}</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -679,20 +697,20 @@
     <!-- ============ 员工：凭证上传（隐藏页） ============ -->
     <template v-if="s.active==='voucher' && s.role==='staff'">
       <div class="card" style="max-width:560px">
-        <el-button text @click="go('work')">‹ 返回工作台</el-button>
-        <div class="card-title" style="margin-top:8px">上传签收凭证
+        <el-button text @click="go('work')">{{ t('‹ 返回工作台') }}</el-button>
+        <div class="card-title" style="margin-top:8px">{{ t('上传签收凭证') }}
           <el-tag v-if="s.voucherTask" size="small">{{ s.voucherTask.no }}</el-tag>
         </div>
-        <el-form label-width="90px">
-          <el-form-item label="凭证照片">
+        <el-form label-width="auto">
+          <el-form-item :label="t('凭证照片')">
             <el-upload drag :auto-upload="false" :limit="3" list-type="picture"
               :on-change="onVoucherFile" :file-list="s.voucherFiles" accept="image/*">
-              <div style="padding:14px 30px">📥 将图片拖到此处，或<em>点击上传</em></div>
+              <div style="padding:14px 30px">{{ t('📥 将图片拖到此处，或') }}<em>{{ t('点击上传') }}</em></div>
             </el-upload>
           </el-form-item>
-          <el-form-item label="签收说明"><el-input v-model="s.voucherNote" type="textarea" :rows="2" placeholder="如：已由本人签收，外包装完好" ></el-input></el-form-item>
+          <el-form-item :label="t('签收说明')"><el-input v-model="s.voucherNote" type="textarea" :rows="2" :placeholder="t('如：已由本人签收，外包装完好')" ></el-input></el-form-item>
           <el-form-item>
-            <el-button type="primary" :disabled="!s.voucherFiles.length" @click="saveVoucher">提交凭证</el-button>
+            <el-button type="primary" :disabled="!s.voucherFiles.length" @click="saveVoucher">{{ t('提交凭证') }}</el-button>
           </el-form-item>
         </el-form>
       </div>
@@ -702,32 +720,32 @@
     <template v-if="s.active==='inventory' && s.role==='staff'">
       <div class="card">
         <el-tabs v-model="s.invTab">
-          <el-tab-pane label="入库" name="in">
+          <el-tab-pane :label="t('入库')" name="in">
             <div style="margin-bottom:12px">
-              <el-button type="primary" size="small" @click="s.invForm={type:'in',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">+ 新建入库</el-button>
+              <el-button type="primary" size="small" @click="s.invForm={type:'in',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">{{ t('+ 新建入库') }}</el-button>
             </div>
             <el-table :data="invIn" v-loading="s.loading">
-              <el-table-column label="单号" prop="no" min-width="140" ></el-table-column>
-              <el-table-column label="物品" prop="goods" min-width="140" ></el-table-column>
-              <el-table-column label="数量" prop="qty" width="80" ></el-table-column>
-              <el-table-column label="仓库" prop="wh" width="130" ></el-table-column>
-              <el-table-column label="操作员" prop="op" width="100" ></el-table-column>
-              <el-table-column label="时间" width="150">
+              <el-table-column :label="t('单号')" prop="no" min-width="140" ></el-table-column>
+              <el-table-column :label="t('物品')" prop="goods" min-width="140" ></el-table-column>
+              <el-table-column :label="t('数量')" prop="qty" :width="locale==='en' ? 155 : 80" ></el-table-column>
+              <el-table-column :label="t('仓库')" prop="wh" :width="locale==='en' ? 155 : 130" ></el-table-column>
+              <el-table-column :label="t('操作员')" prop="op" :width="locale==='en' ? 155 : 100" ></el-table-column>
+              <el-table-column :label="t('时间')" :width="locale==='en' ? 155 : 150">
                 <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
               </el-table-column>
             </el-table>
           </el-tab-pane>
-          <el-tab-pane label="出库" name="out">
+          <el-tab-pane :label="t('出库')" name="out">
             <div style="margin-bottom:12px">
-              <el-button type="primary" size="small" @click="s.invForm={type:'out',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">+ 新建出库</el-button>
+              <el-button type="primary" size="small" @click="s.invForm={type:'out',goods:'',qty:1,wh:'华东一号仓'};s.invVisible=true">{{ t('+ 新建出库') }}</el-button>
             </div>
             <el-table :data="invOut" v-loading="s.loading">
-              <el-table-column label="单号" prop="no" min-width="140" ></el-table-column>
-              <el-table-column label="物品" prop="goods" min-width="140" ></el-table-column>
-              <el-table-column label="数量" prop="qty" width="80" ></el-table-column>
-              <el-table-column label="仓库" prop="wh" width="130" ></el-table-column>
-              <el-table-column label="操作员" prop="op" width="100" ></el-table-column>
-              <el-table-column label="时间" width="150">
+              <el-table-column :label="t('单号')" prop="no" min-width="140" ></el-table-column>
+              <el-table-column :label="t('物品')" prop="goods" min-width="140" ></el-table-column>
+              <el-table-column :label="t('数量')" prop="qty" :width="locale==='en' ? 155 : 80" ></el-table-column>
+              <el-table-column :label="t('仓库')" prop="wh" :width="locale==='en' ? 155 : 130" ></el-table-column>
+              <el-table-column :label="t('操作员')" prop="op" :width="locale==='en' ? 155 : 100" ></el-table-column>
+              <el-table-column :label="t('时间')" :width="locale==='en' ? 155 : 150">
                 <template #default="{row}"><span class="cell-sub">{{ fmt(row.time) }}</span></template>
               </el-table-column>
             </el-table>
@@ -739,7 +757,7 @@
     <!-- ============ 员工：库存看板 ============ -->
     <template v-if="s.active==='board' && s.role==='staff'">
       <div class="card">
-        <div class="card-title">仓库容量概览</div>
+        <div class="card-title">{{ t('仓库容量概览') }}</div>
         <div class="cap-row" v-for="w in s.warehouses" :key="w.name">
           <span class="cap-name">{{ w.name }}</span>
           <div class="cap-bar"><div class="cap-fill" :style="{width:(w.used/w.cap*100).toFixed(1)+'%',background: w.used/w.cap>0.85?'#ef4444':'#2563eb'}"></div></div>
@@ -747,12 +765,12 @@
         </div>
       </div>
       <div class="card">
-        <div class="card-title">近 7 天出入库量</div>
+        <div class="card-title">{{ t('近 7 天出入库量') }}</div>
         <div class="chart">
           <div class="bar-col" v-for="d in s.weekList" :key="d.day">
             <span class="bar-num">{{ d.n }}</span>
             <div class="bar" :style="{height:(d.n/weekMax*140)+'px'}"></div>
-            <span class="bar-day">{{ d.day }}</span>
+            <span class="bar-day">{{ t(d.day) }}</span>
           </div>
         </div>
       </div>
@@ -761,34 +779,34 @@
     <!-- ============ 管理员：仪表盘 ============ -->
     <template v-if="s.active==='dash' && s.role==='admin'">
       <div class="stat-grid">
-        <div class="stat-card"><div class="stat-label">累计运单</div><div class="stat-value">{{ s.stats.total || 0 }}</div><div class="stat-sub">全部历史订单</div></div>
-        <div class="stat-card"><div class="stat-label">已签收</div><div class="stat-value">{{ s.stats.delivered || 0 }}</div><div class="stat-sub">签收率 {{ s.stats.total ? (s.stats.delivered/s.stats.total*100).toFixed(1) : 0 }}%</div></div>
-        <div class="stat-card"><div class="stat-label">累计营收</div><div class="stat-value">¥{{ (s.stats.revenue||0).toFixed(0) }}</div><div class="stat-sub">不含已取消运单</div></div>
-        <div class="stat-card"><div class="stat-label">异常运单</div><div class="stat-value">{{ s.stats.exception || 0 }}</div><div class="stat-sub">待处理理赔</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('累计运单') }}</div><div class="stat-value">{{ s.stats.total || 0 }}</div><div class="stat-sub">{{ t('全部历史订单') }}</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('已签收') }}</div><div class="stat-value">{{ s.stats.delivered || 0 }}</div><div class="stat-sub">{{ t('签收率') }} {{ s.stats.total ? (s.stats.delivered/s.stats.total*100).toFixed(1) : 0 }}%</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('累计营收') }}</div><div class="stat-value">¥{{ (s.stats.revenue||0).toFixed(0) }}</div><div class="stat-sub">{{ t('不含已取消运单') }}</div></div>
+        <div class="stat-card"><div class="stat-label">{{ t('异常运单') }}</div><div class="stat-value">{{ s.stats.exception || 0 }}</div><div class="stat-sub">{{ t('待处理理赔') }}</div></div>
       </div>
       <div class="card">
-        <div class="card-title">近 7 天订单量</div>
+        <div class="card-title">{{ t('近 7 天订单量') }}</div>
         <div class="chart">
           <div class="bar-col" v-for="d in s.weekList" :key="d.day">
             <span class="bar-num">{{ d.n }}</span>
             <div class="bar" :style="{height:(d.n/weekMax*140)+'px'}"></div>
-            <span class="bar-day">{{ d.day }}</span>
+            <span class="bar-day">{{ t(d.day) }}</span>
           </div>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">最新运单</div>
+        <div class="card-title">{{ t('最新运单') }}</div>
         <el-table :data="s.latestList" v-loading="s.loading">
-          <el-table-column label="运单号" min-width="170">
+          <el-table-column :label="t('运单号')" min-width="170">
             <template #default="{row}"><span class="cell-main">{{ row.no }}</span></template>
           </el-table-column>
-          <el-table-column label="物品 / 收件地" min-width="200">
+          <el-table-column :label="t('物品 / 收件地')" min-width="200">
             <template #default="{row}"><span class="cell-main">{{ row.goods }}</span><div class="cell-sub">{{ row.dest }}</div></template>
           </el-table-column>
-          <el-table-column label="状态" width="110">
+          <el-table-column :label="t('状态')" :width="locale==='en' ? 155 : 110">
             <template #default="{row}"><el-tag size="small" :type="stTag(row.status)">{{ stText(row.status) }}</el-tag></template>
           </el-table-column>
-          <el-table-column label="运费" width="100">
+          <el-table-column :label="t('运费')" :width="locale==='en' ? 155 : 100">
             <template #default="{row}"><span class="cell-fee">¥{{ row.fee.toFixed(2) }}</span></template>
           </el-table-column>
         </el-table>
@@ -799,39 +817,39 @@
     <template v-if="s.active==='users' && s.role==='admin'">
       <div class="card">
         <div style="display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap">
-          <el-input v-model="s.userKw" placeholder="搜索姓名 / 账号" style="width:220px" clearable ></el-input>
-          <el-select v-model="s.userRoleFilter" style="width:150px" placeholder="全部角色" clearable>
-            <el-option label="客户" value="客户" ></el-option><el-option label="物流员工" value="物流员工" ></el-option><el-option label="系统管理员" value="系统管理员" ></el-option>
+          <el-input v-model="s.userKw" :placeholder="t('搜索姓名 / 账号')" style="width:220px" clearable ></el-input>
+          <el-select v-model="s.userRoleFilter" style="width:190px" :placeholder="t('全部角色')" clearable>
+            <el-option :label="t('客户')" value="客户" ></el-option><el-option :label="t('物流员工')" value="物流员工" ></el-option><el-option :label="t('系统管理员')" value="系统管理员" ></el-option>
           </el-select>
-          <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">共 {{ s.userTotal }} 位用户</span>
+          <span style="margin-left:auto;font-size:13px;color:#64748b;align-self:center">{{ t('共 {count} 位用户', {count:s.userTotal}) }}</span>
         </div>
         <el-table :data="s.userList" v-loading="s.loading">
-          <el-table-column label="用户" min-width="160">
+          <el-table-column :label="t('用户')" min-width="160">
             <template #default="{row}">
               <div class="cell-main">{{ row.name }}</div>
               <div class="cell-sub">{{ row.account }}</div>
             </template>
           </el-table-column>
-          <el-table-column label="角色分配" width="160">
+          <el-table-column :label="t('角色分配')" :width="locale==='en' ? 160 : 160">
             <template #default="{row}">
               <el-select v-model="row.role" size="small" @change="onRoleChange(row)">
-                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" ></el-option>
+                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="t(r)" :value="r" ></el-option>
               </el-select>
             </template>
           </el-table-column>
-          <el-table-column label="状态" width="100">
+          <el-table-column :label="t('状态')" :width="locale==='en' ? 155 : 100">
             <template #default="{row}">
-              <el-tag size="small" :type="row.active?'success':'danger'">{{ row.active?'正常':'已禁用' }}</el-tag>
+              <el-tag size="small" :type="row.active?'success':'danger'">{{ row.active?t('正常'):t('已禁用') }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="运单数" prop="orderCount" width="90" ></el-table-column>
-          <el-table-column label="注册时间" width="150">
+          <el-table-column :label="t('运单数')" prop="orderCount" :width="locale==='en' ? 155 : 90" ></el-table-column>
+          <el-table-column :label="t('注册时间')" :width="locale==='en' ? 155 : 150">
             <template #default="{row}"><span class="cell-sub">{{ fmtDate(row.created) }}</span></template>
           </el-table-column>
-          <el-table-column label="操作" width="120" fixed="right">
+          <el-table-column :label="t('操作')" :width="locale==='en' ? 155 : 120" fixed="right">
             <template #default="{row}">
               <el-button link :type="row.active?'danger':'primary'" size="small" @click="toggleUserActive(row)">
-                {{ row.active?'禁用':'启用' }}
+                {{ row.active?t('禁用'):t('启用') }}
               </el-button>
             </template>
           </el-table-column>
@@ -843,20 +861,20 @@
       </div>
       <div class="card">
         <el-collapse>
-          <el-collapse-item title="批量角色分配" name="batch">
+          <el-collapse-item :title="t('批量角色分配')" name="batch">
             <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
-              <el-select v-model="s.batchRole" placeholder="选择角色" style="width:160px">
-                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="r" :value="r" ></el-option>
+              <el-select v-model="s.batchRole" :placeholder="t('选择角色')" style="width:200px">
+                <el-option v-for="r in ['客户','物流员工','系统管理员']" :key="r" :label="t(r)" :value="r" ></el-option>
               </el-select>
-              <el-button type="primary" :disabled="!s.batchRole" @click="batchAssign">应用到当前页客户</el-button>
+              <el-button type="primary" :disabled="!s.batchRole" @click="batchAssign">{{ t('应用到当前页客户') }}</el-button>
             </div>
           </el-collapse-item>
-          <el-collapse-item title="角色权限矩阵" name="matrix">
+          <el-collapse-item :title="t('角色权限矩阵')" name="matrix">
             <el-table :data="permMatrix" size="small">
-              <el-table-column prop="mod" label="功能模块" min-width="140" ></el-table-column>
-              <el-table-column prop="c" label="客户" width="100"><template #default="{row}"><span>{{ row.c?'✅':'—' }}</span></template></el-table-column>
-              <el-table-column prop="s" label="物流员工" width="100"><template #default="{row}"><span>{{ row.s?'✅':'—' }}</span></template></el-table-column>
-              <el-table-column prop="a" label="系统管理员" width="110"><template #default="{row}"><span>{{ row.a?'✅':'—' }}</span></template></el-table-column>
+              <el-table-column prop="mod" :label="t('功能模块')" min-width="140"><template #default="{row}">{{ t(row.mod) }}</template></el-table-column>
+              <el-table-column prop="c" :label="t('客户')" :width="locale==='en' ? 155 : 100"><template #default="{row}"><span>{{ row.c?'✅':'—' }}</span></template></el-table-column>
+              <el-table-column prop="s" :label="t('物流员工')" :width="locale==='en' ? 155 : 100"><template #default="{row}"><span>{{ row.s?'✅':'—' }}</span></template></el-table-column>
+              <el-table-column prop="a" :label="t('系统管理员')" :width="locale==='en' ? 155 : 110"><template #default="{row}"><span>{{ row.a?'✅':'—' }}</span></template></el-table-column>
             </el-table>
           </el-collapse-item>
         </el-collapse>
@@ -866,24 +884,24 @@
     <!-- ============ 管理员：报表中心 ============ -->
     <template v-if="s.active==='reports' && s.role==='admin'">
       <div class="card">
-        <div class="card-title">月度运营报表</div>
+        <div class="card-title">{{ t('月度运营报表') }}</div>
         <el-table :data="s.monthList" show-summary :summary-method="sumReport" v-loading="s.loading">
-          <el-table-column prop="month" label="月份" width="120" ></el-table-column>
-          <el-table-column prop="count" label="运单量" width="110" ></el-table-column>
-          <el-table-column prop="delivered" label="已签收" width="110" ></el-table-column>
-          <el-table-column prop="exception" label="异常件" width="100" ></el-table-column>
-          <el-table-column prop="fee" label="营收 (¥)" min-width="120">
+          <el-table-column prop="month" :label="t('月份')" :width="locale==='en' ? 155 : 120" ></el-table-column>
+          <el-table-column prop="count" :label="t('运单量')" :width="locale==='en' ? 155 : 110" ></el-table-column>
+          <el-table-column prop="delivered" :label="t('已签收')" :width="locale==='en' ? 155 : 110" ></el-table-column>
+          <el-table-column prop="exception" :label="t('异常件')" :width="locale==='en' ? 155 : 100" ></el-table-column>
+          <el-table-column prop="fee" :label="t('营收 (¥)')" min-width="120">
             <template #default="{row}">{{ row.fee.toFixed(2) }}</template>
           </el-table-column>
         </el-table>
       </div>
       <div class="card">
-        <div class="card-title">月度运单量趋势</div>
+        <div class="card-title">{{ t('月度运单量趋势') }}</div>
         <div class="chart">
           <div class="bar-col" v-for="m in s.monthList" :key="m.month">
             <span class="bar-num">{{ m.count }}</span>
             <div class="bar" :style="{height:(m.count/monthMax*140)+'px'}"></div>
-            <span class="bar-day">{{ m.month.slice(5) }}月</span>
+            <span class="bar-day">{{ t('{month}月', {month:m.month.slice(5)}) }}</span>
           </div>
         </div>
       </div>
@@ -893,35 +911,35 @@
     <template v-if="s.active==='settings' && s.role==='admin'">
       <div class="card" style="max-width:640px">
         <el-tabs v-model="s.setTab">
-          <el-tab-pane label="基础设置" name="base">
-            <el-form label-width="110px">
-              <el-form-item label="系统名称"><el-input v-model="s.setForm.name" ></el-input></el-form-item>
-              <el-form-item label="客服电话"><el-input v-model="s.setForm.phone" ></el-input></el-form-item>
-              <el-form-item label="公告"><el-input v-model="s.setForm.notice" type="textarea" :rows="2" ></el-input></el-form-item>
+          <el-tab-pane :label="t('基础设置')" name="base">
+            <el-form label-width="auto">
+              <el-form-item :label="t('系统名称')"><el-input v-model="s.setForm.name" ></el-input></el-form-item>
+              <el-form-item :label="t('客服电话')"><el-input v-model="s.setForm.phone" ></el-input></el-form-item>
+              <el-form-item :label="t('公告')"><el-input v-model="s.setForm.notice" type="textarea" :rows="2" ></el-input></el-form-item>
             </el-form>
           </el-tab-pane>
-          <el-tab-pane label="运费规则" name="fee">
-            <el-form label-width="110px">
-              <el-form-item label="首重 (kg)"><el-input-number v-model="s.setForm.first" :min="1" ></el-input-number></el-form-item>
-              <el-form-item label="首重费 (¥)"><el-input-number v-model="s.setForm.firstFee" :min="1" ></el-input-number></el-form-item>
-              <el-form-item label="续重费/kg (¥)"><el-input-number v-model="s.setForm.addFee" :min="1" ></el-input-number></el-form-item>
+          <el-tab-pane :label="t('运费规则')" name="fee">
+            <el-form label-width="auto">
+              <el-form-item :label="t('首重 (kg)')"><el-input-number v-model="s.setForm.first" :min="1" ></el-input-number></el-form-item>
+              <el-form-item :label="t('首重费 (¥)')"><el-input-number v-model="s.setForm.firstFee" :min="1" ></el-input-number></el-form-item>
+              <el-form-item :label="t('续重费/kg (¥)')"><el-input-number v-model="s.setForm.addFee" :min="1" ></el-input-number></el-form-item>
             </el-form>
           </el-tab-pane>
-          <el-tab-pane label="通知设置" name="notice">
-            <el-form label-width="110px">
-              <el-form-item label="签收通知"><el-switch v-model="s.setForm.signNtf" ></el-switch></el-form-item>
-              <el-form-item label="异常通知"><el-switch v-model="s.setForm.excNtf" ></el-switch></el-form-item>
-              <el-form-item label="公告加入站内通知"><el-switch v-model="s.setForm.mktNtf" ></el-switch></el-form-item>
+          <el-tab-pane :label="t('通知设置')" name="notice">
+            <el-form label-width="auto">
+              <el-form-item :label="t('签收通知')"><el-switch v-model="s.setForm.signNtf" ></el-switch></el-form-item>
+              <el-form-item :label="t('异常通知')"><el-switch v-model="s.setForm.excNtf" ></el-switch></el-form-item>
+              <el-form-item :label="t('公告加入站内通知')"><el-switch v-model="s.setForm.mktNtf" ></el-switch></el-form-item>
             </el-form>
           </el-tab-pane>
         </el-tabs>
-        <el-button type="primary" @click="saveSettings">保存设置</el-button>
+        <el-button type="primary" @click="saveSettings">{{ t('保存设置') }}</el-button>
       </div>
     </template>
   </div>
 
   <!-- 个人中心弹窗 -->
-  <el-dialog v-model="s.auth.profileVisible" title="👤 个人中心" width="420px">
+  <el-dialog v-model="s.auth.profileVisible" :title="t('👤 个人中心')" width="420px">
     <div class="pf-head">
       <div class="pf-avatar">{{ s.auth.user.name ? s.auth.user.name.charAt(0) : '游' }}</div>
       <div>
@@ -930,67 +948,68 @@
       </div>
     </div>
     <el-descriptions :column="1" border style="margin-top:18px">
-      <el-descriptions-item label="登录账号">{{ s.auth.user.account }}</el-descriptions-item>
-      <el-descriptions-item label="账号角色">{{ roleText }}</el-descriptions-item>
-      <el-descriptions-item label="登录时间">{{ s.auth.user.loginAt }}</el-descriptions-item>
-      <el-descriptions-item label="令牌状态">
+      <el-descriptions-item :label="t('登录账号')">{{ s.auth.user.account }}</el-descriptions-item>
+      <el-descriptions-item :label="t('账号角色')">{{ roleText }}</el-descriptions-item>
+      <el-descriptions-item :label="t('登录时间')">{{ s.auth.user.loginAt }}</el-descriptions-item>
+      <el-descriptions-item :label="t('令牌状态')">
         <el-tag size="small" :type="CONFIG.TOKEN ? 'success' : 'info'">
-          {{ CONFIG.TOKEN ? '有效 · ' + String(CONFIG.TOKEN).slice(0, 14) + '…' : '未获取' }}
+          {{ CONFIG.TOKEN ? t('有效 · ') + String(CONFIG.TOKEN).slice(0, 14) + '…' : t('未获取') }}
         </el-tag>
       </el-descriptions-item>
     </el-descriptions>
     <template #footer>
-      <el-button @click="s.auth.profileVisible = false">关 闭</el-button>
-      <el-button type="danger" plain @click="logout">退出登录</el-button>
+      <el-button @click="s.auth.profileVisible = false">{{ t('关 闭') }}</el-button>
+      <el-button type="danger" plain @click="logout">{{ t('退出登录') }}</el-button>
     </template>
   </el-dialog>
 
   <!-- 意见反馈弹窗 -->
-  <el-dialog v-model="s.fbVisible" :title="s.fbReadonly ? '查看反馈' : '意见反馈 · ' + s.fbForm.no" width="460px">
+  <el-dialog v-model="s.fbVisible" :title="s.fbReadonly ? t('查看反馈') : t('意见反馈 · ') + s.fbForm.no" width="460px">
     <div v-if="!s.fbReadonly">
-      <el-form label-width="70px">
-        <el-form-item label="类型">
+      <el-form label-width="auto">
+        <el-form-item :label="t('类型')">
           <el-radio-group v-model="s.fbForm.type">
-            <el-radio v-for="t in s.fbTypes" :key="t" :value="t">{{ t }}</el-radio>
+            <el-radio v-for="fbType in s.fbTypes" :key="fbType" :value="fbType">{{ t(fbType) }}</el-radio>
           </el-radio-group>
         </el-form-item>
-        <el-form-item label="内容">
+        <el-form-item :label="t('内容')">
           <el-input v-model="s.fbForm.content" type="textarea" :rows="4"
-            placeholder="请描述您的问题或建议（每个运单仅可提交一条反馈）" ></el-input>
+            :placeholder="t('请描述您的问题或建议（每个运单仅可提交一条反馈）')" ></el-input>
         </el-form-item>
       </el-form>
     </div>
     <el-descriptions v-else :column="1" border>
-      <el-descriptions-item label="反馈类型">{{ s.fbForm.type }}</el-descriptions-item>
-      <el-descriptions-item label="反馈内容">{{ s.fbForm.content }}</el-descriptions-item>
-      <el-descriptions-item label="提交时间">{{ s.fbForm.time }}</el-descriptions-item>
-      <el-descriptions-item label="客服回复">{{ s.fbForm.reply || '待客服处理…' }}</el-descriptions-item>
+      <el-descriptions-item :label="t('反馈类型')">{{ t(s.fbForm.type) }}</el-descriptions-item>
+      <el-descriptions-item :label="t('反馈内容')">{{ s.fbForm.content }}</el-descriptions-item>
+      <el-descriptions-item :label="t('提交时间')">{{ s.fbForm.time }}</el-descriptions-item>
+      <el-descriptions-item :label="t('客服回复')">{{ s.fbForm.reply || t('待客服处理…') }}</el-descriptions-item>
     </el-descriptions>
     <template #footer>
       <template v-if="!s.fbReadonly">
-        <el-button @click="s.fbVisible=false">取消</el-button>
-        <el-button type="primary" @click="saveFeedback">提交反馈</el-button>
+        <el-button @click="s.fbVisible=false">{{ t('取消') }}</el-button>
+        <el-button type="primary" @click="saveFeedback">{{ t('提交反馈') }}</el-button>
       </template>
-      <el-button v-else type="primary" @click="s.fbVisible=false">关闭</el-button>
+      <el-button v-else type="primary" @click="s.fbVisible=false">{{ t('关闭') }}</el-button>
     </template>
   </el-dialog>
 
   <!-- 入库/出库弹窗 -->
-  <el-dialog v-model="s.invVisible" :title="s.invForm.type==='in'?'新建入库':'新建出库'" width="420px">
-    <el-form label-width="70px">
-      <el-form-item label="物品"><el-input v-model="s.invForm.goods" placeholder="物品名称" ></el-input></el-form-item>
-      <el-form-item label="数量"><el-input-number v-model="s.invForm.qty" :min="1" :max="999" ></el-input-number></el-form-item>
-      <el-form-item label="仓库">
+  <el-dialog v-model="s.invVisible" :title="s.invForm.type==='in'?t('新建入库'):t('新建出库')" width="420px">
+    <el-form label-width="auto">
+      <el-form-item :label="t('物品')"><el-input v-model="s.invForm.goods" :placeholder="t('物品名称')" ></el-input></el-form-item>
+      <el-form-item :label="t('数量')"><el-input-number v-model="s.invForm.qty" :min="1" :max="999" ></el-input-number></el-form-item>
+      <el-form-item :label="t('仓库')">
         <el-select v-model="s.invForm.wh" style="width:100%">
           <el-option v-for="w in s.warehouses" :key="w.name" :label="w.name" :value="w.name" ></el-option>
         </el-select>
       </el-form-item>
     </el-form>
     <template #footer>
-      <el-button @click="s.invVisible=false">取消</el-button>
-      <el-button type="primary" @click="addInv">确认{{ s.invForm.type==='in'?'入库':'出库' }}</el-button>
+      <el-button @click="s.invVisible=false">{{ t('取消') }}</el-button>
+      <el-button type="primary" @click="addInv">{{ t(s.invForm.type==='in'?'确认入库':'确认出库') }}</el-button>
     </template>
   </el-dialog>
+</el-config-provider>
 </div>
 
 <script>
@@ -1445,9 +1464,29 @@ createApp({
       searchHits:[], loading:false
     });
 
+    const locale = ref('zh-CN');
+    const t = (key, values) => LogisticsI18n.translate(locale.value, key, values);
+    const systemText = text => LogisticsI18n.systemText(locale.value, text);
+    const elementLocale = computed(() => ({'zh-CN':ElementPlusLocaleZhCn,'zh-TW':ElementPlusLocaleZhTw,en:ElementPlusLocaleEn})[locale.value]);
+    function setLocale(value, persist=true){
+      locale.value = LogisticsI18n.locales.includes(value) ? value : 'zh-CN';
+      document.documentElement.lang = locale.value;
+      document.title = t('物流管理系统');
+      if(persist && s.auth.user.account){
+        try { localStorage.setItem('ls_locale:'+s.auth.user.account, locale.value); } catch(e) { /* Private browsing: keep the choice for this session. */ }
+      }
+      if(loginRef.value) loginRef.value.clearValidate();
+      if(regRef.value) regRef.value.clearValidate();
+    }
+    function restoreLocale(){
+      let value='zh-CN';
+      try { value=localStorage.getItem('ls_locale:'+s.auth.user.account) || value; } catch(e) {}
+      setLocale(value, false);
+    }
+
     const fmt = function(t){ const d = new Date(t); return String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); };
     const fmtDate = function(t){ const d = new Date(t); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
-    const stText = function(v){ return stTextMap[v] || v; };
+    const stText = function(v){ return t(stTextMap[v] || v); };
     const stTag = function(v){ return stTagMap[v] || 'info'; };
 
     const menus = computed(function(){
@@ -1457,8 +1496,8 @@ createApp({
       return [{k:'dash',i:'📈',t:'仪表盘'},{k:'users',i:'👥',t:'用户管理'},{k:'reports',i:'📑',t:'报表中心'},{k:'settings',i:'⚙️',t:'系统设置'}];
     });
     const titleMap = {home:'首页',send:'寄件',track:'包裹追踪',orders:'我的订单',work:'工作台',status:'状态更新',voucher:'凭证上传',inventory:'库存管理',board:'库存看板',dash:'仪表盘',users:'用户管理',reports:'报表中心',settings:'系统设置'};
-    const pageTitle = computed(function(){ return s.active==='phaseIntro' ? '功能说明' : titleMap[s.active] || ''; });
-    const roleText = computed(function(){ return {customer:'客户',staff:'物流员工',admin:'系统管理员'}[s.role]; });
+    const pageTitle = computed(function(){ return t(s.active==='phaseIntro' ? '功能说明' : titleMap[s.active] || ''); });
+    const roleText = computed(function(){ return t(ROLE_LABEL[s.role]); });
 
     function go(k){
       if(phaseOne && !menus.value.some(function(m){ return m.k===k; })){ laterStage(); return; }
@@ -1466,19 +1505,19 @@ createApp({
       s.crumbParent = (s.role==='staff' && (k==='status'||k==='voucher')) ? '工作台' : '';
     }
     function switchRole(r){
-      if(!CONFIG.USE_MOCK){ ElMessage.info('请通过切换账号使用对应角色'); return; }
+      if(!CONFIG.USE_MOCK){ ElMessage.info(t('请通过切换账号使用对应角色')); return; }
       if(r===s.role) return;
       s.role = r;
       s.active = {customer:'home',staff:'work',admin:'dash'}[r];
       s.crumbParent = '';
-      ElMessage.success('已切换为「' + roleText.value + '」视角');
+      ElMessage.success(t('已切换为「{role}」视角', {role:roleText.value}));
       loadByRole(r);
     }
 
     /* ---------- 数据加载（统一走 api） ---------- */
-    function laterStage(){ ElMessage.info('该功能将在后续阶段开放'); }
+    function laterStage(){ ElMessage.info(t('该功能将在后续阶段开放')); }
     function initialPage(role){ return phaseOne && role!=='customer' ? 'phaseIntro' : {customer:'home',staff:'work',admin:'dash'}[role]; }
-    function onFail(e){ if(e && e.name==='StaleSessionError') return null; ElMessage.error('请求失败：' + (e && e.message ? e.message : e)); return null; }
+    function onFail(e){ if(e && e.name==='StaleSessionError') return null; ElMessage.error(t('请求失败：{reason}', {reason:systemText(e && e.message ? e.message : String(e))})); return null; }
     async function loadOrders(){
       if(!s.auth.logged) return;
       const r = await api.orders({kw:s.orderKw, status:s.orderFilter, page:s.orderPage, size:s.orderSize}).catch(onFail);
@@ -1566,7 +1605,7 @@ createApp({
 
     /* ---------- 客户：追踪 / 签收 / 反馈 / 下单 ---------- */
     function openTrack(o){
-      if(s.role!=='customer'){ ElMessage.info('当前为 ' + roleText.value + ' 视角'); return; }
+      if(s.role!=='customer'){ ElMessage.info(t('当前为 {role} 视角', {role:roleText.value})); return; }
       go('track'); s.trackSel = o.no; s.trackOrder = o.traces ? o : null; loadTrack(o.no);
     }
     function trackOrder(o){ openTrack(o); }
@@ -1582,39 +1621,39 @@ createApp({
     }
     async function saveFeedback(){
       if(phaseOne){ laterStage(); return; }
-      if(!s.fbForm.content.trim()){ ElMessage.warning('请填写反馈内容'); return; }
+      if(!s.fbForm.content.trim()){ ElMessage.warning(t('请填写反馈内容')); return; }
       const r = await api.feedback(s.fbForm.no, {type:s.fbForm.type, content:s.fbForm.content}).catch(onFail);
       if(!r) return;
       s.fbMap[s.fbForm.no] = r;
       const row = s.orderList.find(function(x){ return x.no === s.fbForm.no; });
       if(row) row.fb = r;
       s.fbVisible = false;
-      ElMessage.success('反馈已提交，感谢您的意见');
+      ElMessage.success(t('反馈已提交，感谢您的意见'));
       loadOrders();
     }
     async function confirmSign(){
       if(phaseOne){ laterStage(); return; }
-      if(!s.signForm.no){ ElMessage.warning('请选择待签收运单'); return; }
-      if(!s.signForm.code){ ElMessage.warning('请输入签收码'); return; }
+      if(!s.signForm.no){ ElMessage.warning(t('请选择待签收运单')); return; }
+      if(!s.signForm.code){ ElMessage.warning(t('请输入签收码')); return; }
       const r = await api.sign(s.signForm.no, {code:s.signForm.code, by:s.signForm.by}).catch(onFail);
       if(!r) return;
       const no = r.no;
       s.signForm = {no:'', code:'', by:'本人'};
-      ElMessage.success('签收成功，感谢使用');
+      ElMessage.success(t('签收成功，感谢使用'));
       loadOrders(); loadWaitSign(); loadStats(); loadTrack(s.trackSel);
-      ElMessageBox.confirm('是否顺便评价本次配送服务？','签收完成',{confirmButtonText:'去评价',cancelButtonText:'暂不'})
+      ElMessageBox.confirm(t('是否顺便评价本次配送服务？'),t('签收完成'),{confirmButtonText:t('去评价'),cancelButtonText:t('暂不')})
         .then(function(){ openFeedback({no:no, fb:null}); }).catch(function(){});
     }
     const sendPrice = computed(function(){
       return +(s.setForm.firstFee + Math.max(0, Math.ceil(s.sendForm.weight - s.setForm.first)) * s.setForm.addFee).toFixed(2);
     });
     async function submitSend(){
-      if(!s.sendForm.to || !s.sendForm.dest){ ElMessage.warning('请填写收件人和地址'); return; }
+      if(!s.sendForm.to || !s.sendForm.dest){ ElMessage.warning(t('请填写收件人和地址')); return; }
       const r = await api.createOrder({receiver:s.sendForm.to, dest:s.sendForm.dest,
         goods:s.sendForm.goods, weight:s.sendForm.weight, fee: sendPrice.value}).catch(onFail);
       if(!r) return;
       resetSend();
-      ElMessage.success('下单成功，运单号 ' + r.no + '，快递员将上门揽收');
+      ElMessage.success(t('下单成功，运单号 {no}，快递员将上门揽收', {no:r.no}));
       s.orderPage = 1; loadOrders(); loadStats();
     }
     function resetSend(){ s.sendForm = {to:'',dest:'',goods:goodsList[0],weight:1}; }
@@ -1632,7 +1671,7 @@ createApp({
       if(!task) return;
       const r = await api.updateTaskStatus(task.id, {status:s.statusForm.status, note:s.statusForm.note}).catch(onFail);
       if(!r) return;
-      ElMessage.success('运单 ' + task.no + ' 已更新为「' + stTextMap[s.statusForm.status] + '」');
+      ElMessage.success(t('运单 {no} 已更新为「{status}」', {no:task.no,status:stText(s.statusForm.status)}));
       go('work'); loadTasks(); loadStats();
     }
     function openVoucher(task){ s.voucherTask = task; s.voucherFiles = []; s.voucherNote = ''; go('voucher'); }
@@ -1647,18 +1686,18 @@ createApp({
       });
       const r = await api.uploadVoucher(s.voucherTask.id, fd).catch(onFail);
       if(!r) return;
-      ElMessage.success('凭证已上传');
+      ElMessage.success(t('凭证已上传'));
       go('work'); loadTasks(); loadStats();
     }
     const invIn = computed(function(){ return s.invList.filter(function(r){ return r.type === 'in'; }); });
     const invOut = computed(function(){ return s.invList.filter(function(r){ return r.type === 'out'; }); });
     async function addInv(){
       if(phaseOne){ laterStage(); return; }
-      if(!s.invForm.goods){ ElMessage.warning('请填写物品名称'); return; }
+      if(!s.invForm.goods){ ElMessage.warning(t('请填写物品名称')); return; }
       const r = await api.createInv({type:s.invForm.type, goods:s.invForm.goods, qty:s.invForm.qty, wh:s.invForm.wh}).catch(onFail);
       if(!r) return;
       s.invVisible = false;
-      ElMessage.success((s.invForm.type==='in'?'入库':'出库') + '成功');
+      ElMessage.success(t(s.invForm.type==='in'?'入库成功':'出库成功'));
       s.invTab = s.invForm.type;
       loadInv(); loadWarehouses();
     }
@@ -1667,16 +1706,16 @@ createApp({
     async function onRoleChange(u){
       if(phaseOne){ laterStage(); return; }
       const r = await api.updateUserRole(u.id, u.role).catch(onFail);
-      if(r) ElMessage.success('已将 ' + u.name + ' 的角色调整为「' + u.role + '」');
+      if(r) ElMessage.success(t('已将 {name} 的角色调整为「{role}」', {name:u.name,role:t(u.role)}));
       if(r && u.account===s.auth.user.account && !CONFIG.USE_MOCK) { doLogout(true);return; }
       loadUsers();
     }
     async function batchAssign(){
       if(phaseOne){ laterStage(); return; }
       const ids = s.userList.filter(function(u){ return u.role === '客户'; }).map(function(u){ return u.id; });
-      if(!ids.length){ ElMessage.warning('当前页没有客户角色用户'); return; }
+      if(!ids.length){ ElMessage.warning(t('当前页没有客户角色用户')); return; }
       const r = await api.batchRole(s.batchRole, ids).catch(onFail);
-      if(r) { ElMessage.success('已批量调整 ' + ids.length + ' 位用户'); loadUsers(); }
+      if(r) { ElMessage.success(t('已批量调整 {count} 位用户', {count:ids.length})); loadUsers(); }
     }
     async function loadSettings(){
       if(!s.auth.logged || phaseOne || CONFIG.USE_MOCK) return;
@@ -1684,9 +1723,9 @@ createApp({
       if(r) s.setForm=r;
     }
     async function saveSettings(){
-      if(CONFIG.USE_MOCK){ ElMessage.success('演示设置已保存'); return; }
+      if(CONFIG.USE_MOCK){ ElMessage.success(t('演示设置已保存')); return; }
       const r=await req('/settings',{method:'PUT',body:JSON.stringify(s.setForm)}).catch(onFail);
-      if(r){ ElMessage.success('设置已保存到数据库');await loadSettings(); }
+      if(r){ ElMessage.success(t('设置已保存到数据库'));await loadSettings(); }
     }
     async function toggleUserActive(u){
       if(CONFIG.USE_MOCK){u.active=!u.active;return;}
@@ -1704,7 +1743,7 @@ createApp({
     const monthMax = computed(function(){ return Math.max.apply(null, s.monthList.map(function(m){ return m.count; }).concat([1])); });
     function sumReport(param){
       return param.columns.map(function(col, i){
-        if(i===0) return '合计';
+        if(i===0) return t('合计');
         const vals = param.data.map(function(r){ return Number(r[col.property]); });
         if(col.property==='fee') return '¥' + vals.reduce(function(a,b){ return a+b; }, 0).toFixed(2);
         return vals.reduce(function(a,b){ return a + (isNaN(b) ? 0 : b); }, 0);
@@ -1725,28 +1764,28 @@ createApp({
 
     /* ================= 认证：登录 / 注册 / 会话 ================= */
     const loginRef = ref(null), regRef = ref(null);
-    const loginRules = {
-      account: [{ required:true, message:'请输入用户名', trigger:'blur' }],
-      pwd: [{ required:true, message:'请输入密码', trigger:'blur' },
-            { min:6, message:'密码至少 6 位', trigger:'blur' }]
-    };
+    const loginRules = computed(function(){ return {
+      account: [{ required:true, message:t('请输入用户名'), trigger:'blur' }],
+      pwd: [{ required:true, message:t('请输入密码'), trigger:'blur' },
+            { min:6, message:t('密码至少 6 位'), trigger:'blur' }]
+    }; });
     const USERNAME_RE = /^[A-Za-z0-9_]{4,16}$/;
-    const regRules = {
-      account: [{ required:true, message:'请设置用户名', trigger:'blur' },
-                { pattern:USERNAME_RE, message:'4-16 位字母、数字或下划线，且不能以下划线开头以外的符号', trigger:'blur' },
+    const regRules = computed(function(){ return {
+      account: [{ required:true, message:t('请设置用户名'), trigger:'blur' },
+                { pattern:USERNAME_RE, message:t('4-16 位字母、数字或下划线，且不能以下划线开头以外的符号'), trigger:'blur' },
                 { validator:function(r,v,cb){
                     if (!v || !USERNAME_RE.test(v)) return cb();
                     /* 演示模式下可即时查重，真实模式交由后端返回 409 */
                     if (CONFIG.USE_MOCK && mockDB.accounts.some(function(x){ return x.account === v; }))
-                      return cb(new Error('该用户名已被注册'));
+                      return cb(new Error(t('该用户名已被注册')));
                     cb();
                   }, trigger:'blur' }],
-      pwd: [{ required:true, message:'请设置密码', trigger:'blur' },
-            { min:6, max:20, message:'密码长度 6-20 位', trigger:'blur' }],
-      pwd2: [{ required:true, message:'请再次输入密码', trigger:'blur' },
-             { validator:function(r,v,cb){ v === s.auth.reg.pwd ? cb() : cb(new Error('两次输入的密码不一致')); }, trigger:'blur' }],
-      agree: [{ validator:function(r,v,cb){ v ? cb() : cb(new Error('请先阅读并同意用户协议')); }, trigger:'change' }]
-    };
+      pwd: [{ required:true, message:t('请设置密码'), trigger:'blur' },
+            { min:6, max:20, message:t('密码长度 6-20 位'), trigger:'blur' }],
+      pwd2: [{ required:true, message:t('请再次输入密码'), trigger:'blur' },
+             { validator:function(r,v,cb){ v === s.auth.reg.pwd ? cb() : cb(new Error(t('两次输入的密码不一致'))); }, trigger:'blur' }],
+      agree: [{ validator:function(r,v,cb){ v ? cb() : cb(new Error(t('请先阅读并同意用户协议'))); }, trigger:'change' }]
+    }; });
 
     const nowStr = function(){
       const d = new Date(), p = function(n){ return String(n).padStart(2,'0'); };
@@ -1773,11 +1812,12 @@ createApp({
       s.auth.user = { name: d.name || d.account || '用户', account: d.account || '',
         role: d.role || 'customer', loginAt: nowStr() };
       s.auth.logged = true;
+      restoreLocale();
       saveSession(s.auth.remember);
       s.role = s.auth.user.role;
       s.active = initialPage(s.role);
       s.crumbParent = '';
-      ElMessage.success((msg || '欢迎回来') + '，' + s.auth.user.name);
+      ElMessage.success(t('{message}，{name}', {message:t(msg || '欢迎回来'),name:s.auth.user.name}));
       loadAll();
     }
     async function submitLogin(){
@@ -1814,7 +1854,7 @@ createApp({
       s.auth.tab = 'login';
       s.auth.login.account = a.account;
       s.auth.login.pwd = a.pwd;
-      ElMessage.info('已填入演示账号 ' + a.account + '，点击登录进入');
+      ElMessage.info(t('已填入演示账号 {account}，点击登录进入', {account:a.account}));
       if (loginRef.value) loginRef.value.clearValidate();
     }
     function forgotPwd(){
@@ -1838,11 +1878,11 @@ createApp({
       s.waitSignList=[];s.signableList=[];s.latestList=[];s.stats={};s.weekList=[];s.monthList=[];
       s.taskList=[];s.taskTotal=0;s.userList=[];s.userTotal=0;s.invList=[];s.warehouses=[];s.notices=[];s.fbMap={};
       s.fbVisible=false;s.statusForm={task:null,status:'transit',note:''};s.voucherTask=null;s.voucherFiles=[];
-      if (!quiet) ElMessage.success('已安全退出登录');
+      if (!quiet) ElMessage.success(t('已安全退出登录'));
     }
     function logout(){
-      ElMessageBox.confirm('确定要退出当前账号吗？', '退出登录',
-        { confirmButtonText:'退出', cancelButtonText:'取消', type:'warning' })
+      ElMessageBox.confirm(t('确定要退出当前账号吗？'),t('退出登录'),
+        { confirmButtonText:t('退出'), cancelButtonText:t('取消'), type:'warning' })
         .then(function(){ doLogout(false); }).catch(function(){});
     }
     function onUserCmd(c){
@@ -1863,6 +1903,7 @@ createApp({
         CONFIG.TOKEN = tk;
         s.auth.user = Object.assign({ name:'', account:'', role:'customer', loginAt:'' }, u);
         s.auth.logged = true;
+        restoreLocale();
         s.auth.remember = true;
         s.role = s.auth.user.role;
         s.active = initialPage(s.role);
@@ -1871,7 +1912,7 @@ createApp({
       } catch(e) { clearSession(); return false; }
     }
 
-    return { s, CONFIG, phaseOne, ElMessage, menus, pageTitle, roleText, go, switchRole,
+    return { s, locale, t, systemText, elementLocale, setLocale, CONFIG, phaseOne, ElMessage, menus, pageTitle, roleText, go, switchRole,
       loadOrders, loadTasks, loadUsers, loadAll, statusOptions, saveSettings, toggleUserActive,
       trackOrder, openFeedback, saveFeedback, confirmSign, sendPrice, submitSend, resetSend,
       openStatus, saveStatus, openVoucher, onVoucherFile, saveVoucher,

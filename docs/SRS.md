@@ -1,6 +1,6 @@
 # Software Requirements Specification (SRS)
 
-Version 1.1 · October 28, 2026 · Application baseline: `70bd1d2`
+Version 1.2 · November 4, 2026 · Business baseline: `70bd1d2`; language extension: FR-12
 
 [Documentation index](README.md) · [Project overview](../README.md)
 
@@ -29,6 +29,7 @@ The system supports an educational logistics workflow. It does not connect to a 
 | FR-09 | Administrators shall be able to search accounts, assign roles, and enable or disable accounts. | Batch role changes succeed or roll back together. Role changes and disabling an account revoke its existing tokens. The last enabled administrator cannot be disabled or demoted. |
 | FR-10 | The system shall provide authorized statistics and notifications. | Customer statistics cover only their orders; administrators can read monthly reports. Notifications contain the user's events and enabled system announcements. |
 | FR-11 | Administrators shall be able to save system settings; authenticated users shall be able to read them. | Saved values are returned on a subsequent read. Customer and staff attempts to change settings are rejected. |
+| FR-12 | All authenticated roles shall be able to select Simplified Chinese, Traditional Chinese, or English from the top-right navigation. | Labels, statuses, known system messages, and component controls change without reloading or clearing forms. The browser remembers the preference separately for each account. User content and API values remain unchanged. |
 
 ## 4. Quality Constraints
 
@@ -62,6 +63,7 @@ No throughput, concurrent-user, or availability target has been agreed. Existing
 | FR-08; NFR-03 | InventoryService; transactional order and task services | [FullWorkflowTest](../src/test/java/com/example/logistics/FullWorkflowTest.java), [ConcurrentOrderTest](../src/test/java/com/example/logistics/ConcurrentOrderTest.java) |
 | FR-09, FR-11 | AdminService; BootstrapAdmin for first-admin setup | [FullWorkflowTest](../src/test/java/com/example/logistics/FullWorkflowTest.java); bootstrap instructions in the README |
 | FR-10 | ReportService | [FullWorkflowTest](../src/test/java/com/example/logistics/FullWorkflowTest.java) |
+| FR-12 | logistics-admin.html, logistics-i18n.js, Element Plus locale files | [Frontend script tests](../scripts/test-phase-one-frontend.cjs), [Language browser checks](../scripts/test-language-browser.cjs); [scope and evidence](LANGUAGE.md) |
 | NFR-04–05 | logistics-admin.html, CorsConfig | [Frontend script tests](../scripts/test-phase-one-frontend.cjs), [ProxyCorsTest](../src/test/java/com/example/logistics/ProxyCorsTest.java) |
 | NFR-06 | README installation and test instructions | Clean-machine installation remains pending |
 

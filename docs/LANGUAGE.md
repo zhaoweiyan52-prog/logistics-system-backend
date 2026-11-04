@@ -1,0 +1,40 @@
+# Interface Languages
+
+November 4, 2026 · [Requirements FR-12](SRS.md) · [Verification](VERIFICATION.md)
+
+## Behavior
+
+Customers, logistics staff, and administrators can choose 简体中文, 繁體中文, or English from the top-right selector after login. The default is Simplified Chinese. Switching updates menus, labels, status descriptions, known system messages, validation rules, and Element Plus controls without reloading the page or clearing forms.
+
+Preferences use browser local storage, keyed by account (`ls_locale:<account>`). They survive logout and refresh in that browser, but do not synchronize between devices. If storage is unavailable, the current session can still switch language. An account without a stored preference starts in Simplified Chinese.
+
+Names, addresses, entered goods descriptions, warehouse names, announcements, feedback, and staff notes remain as entered. The default system title is translated; a custom title remains unchanged. API paths, fields, role values, status codes, and stored business values are unchanged. Unknown server messages remain visible in their original form.
+
+## Implementation
+
+- The existing Vue page uses explicit translation bindings, with dictionaries in `src/main/resources/static/logistics-i18n.js`. Translation occurs at display time rather than changing returned records.
+- Official Element Plus **2.7.8** locales (`en`, `zh-cn`, `zh-tw`) are served locally, matching the installed component version. Source: `https://cdn.jsdelivr.net/npm/element-plus@2.7.8/dist/locale/<locale>.min.js` (Element Plus, MIT).
+- UI translations were produced with DeepL and reviewed for ambiguous terminology and interpolation tokens. The deployed website makes no translation-service calls.
+- Two existing template binding defects were found during browser checks: tracking options referenced an undefined `orders` binding, and search suggestions referenced an undefined `searchHits` binding. Both now read the existing reactive state (`s.orderList`, `s.searchHits`).
+
+## Verification
+
+Run the VM regression without additional packages:
+
+```sh
+node --test scripts/test-phase-one-frontend.cjs
+```
+
+Recorded result: **31 passed**. Added checks cover all roles, stored preferences, account isolation, unchanged form state and API payloads, translated errors, and preservation of staff notes.
+
+For browser checks, install Playwright in a separate tools directory and make it resolvable by Node (for example, set `NODE_PATH` to that directory's `node_modules`). Microsoft Edge must be installed. No frontend npm build is required.
+
+```sh
+node scripts/test-language-browser.cjs
+```
+
+Recorded result: **nine role/language combinations passed** in local headless Edge at 1440 × 1000. The script serves local assets and intercepts all API calls with synthetic responses. It checks navigation, English text coverage, interpolation tokens, pagination, form preservation, tracking, feedback and inventory dialogs, administrator settings, and refresh persistence. Screenshots and results are written to the ignored `target/language-browser` directory.
+
+Maven packaging also succeeded with **37 H2 tests passed**, using JDK 24.0.1 and Maven 3.9.11. The sandboxed attempt stalled during Mockito attachment and was stopped; the completed run used normal local process permissions and the isolated test profile.
+
+These checks are not a rerun of the tester's Postman suite or a complete production workflow. This change does not modify Java code, database schemas, or stored records. Full narrow-screen and cross-browser acceptance remain separate tasks.

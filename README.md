@@ -10,11 +10,13 @@ Undergraduate Software Engineering Course Project: A web application that suppor
 - [Design and Interfaces](docs/DESIGN.md): Architecture, data model, state transitions, and 24 API operations.
 - [Verification and Evolution](docs/VERIFICATION.md): Test evidence, fix logs, and demonstration steps.
 
-These documents describe the system that was put in place as of October 28, 2026, at application commit `70bd1d2`. They can be used to evaluate the project, but they are not the same as the final report for the course (maximum 1,000 words) or each student's individual logbook.
+These documents are based on the business baseline as of October 28, 2026, and include the multilingual feature description dated November 4, 2026. The documents may be used for instructor review, but they are not the final course report, nor are they personal logs. The course report is limited to 1,000 words.
 
 ## Scope
 
-Customers can place orders, check their order status and tracking information, confirm receipt using a verification code, and submit feedback. Employees use a shared task pool to track progress, upload proof of delivery, and record inventory movements. Administrators manage roles and account activation/deactivation, view reports, and save settings. The interface and business prompts are currently in Chinese; the English documentation does not imply that the interface has been localized into English. The role labels are Customer (`客户`), Logistics Staff (`物流员工`), and System Administrator (`系统管理员`).
+Customers can place orders, check their order status and tracking information, confirm receipt using a verification code, and submit feedback. Employees use a shared task pool to track progress, upload proof of delivery, and record inventory movements. Administrators manage roles and account activation/deactivation, view reports, and save settings.
+
+After logging in, each user type can select Simplified Chinese, Traditional Chinese, or English in the upper-right corner. The website automatically saves the account’s language preference in the current browser. Form data is not lost when switching languages. User-entered content is retained in its original language. See the [language change and verification record](docs/LANGUAGE.md).
 
 ## Technology and Architecture
 

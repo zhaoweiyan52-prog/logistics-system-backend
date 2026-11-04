@@ -1,6 +1,10 @@
 # Validation, Evolution, and Demonstration
 
-October 28, 2026 · [Documentation index](README.md) · [Requirements](SRS.md)
+Updated November 4, 2026 · [Documentation index](README.md) · [Requirements](SRS.md)
+
+## November 4 Language Update
+
+The frontend script suite now passes 31 tests, including account-specific language persistence, form preservation, canonical API values, and translated messages. Local Edge browser checks passed for all three roles in all three languages, with synthetic API responses. Dialogs, tracking selection, search suggestions, settings tabs, and pagination were also checked. Maven packaging succeeded with all 37 H2 tests passing on JDK 24.0.1. See [the language record](LANGUAGE.md) for reproduction commands and limits. The records below retain their original dates; the tester's Postman suite is a separate pending activity.
 
 ## Evidence and Limitations
 

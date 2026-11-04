@@ -10,7 +10,7 @@
 | [Design and interfaces](DESIGN.md) | Architecture, entity relationships, order-creation sequence, state transitions, and API contract |
 | [Verification and evolution](VERIFICATION.md) | Recorded test results, expected behavior, evidence, defect fixes, and a demonstration checklist |
 
-The English documents describe application baseline `70bd1d2`, dated October 28, 2026. They summarize existing implementation and records. Historical documents may describe earlier behavior.
+The business baseline is `70bd1d2`, dated October 28, 2026. The November 4 [language extension](LANGUAGE.md) adds FR-12 and new frontend evidence. Historical documents may describe earlier behavior.
 
 ## Relationship to the Course Assessment
 

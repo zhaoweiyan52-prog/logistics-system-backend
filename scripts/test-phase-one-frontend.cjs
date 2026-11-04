@@ -12,10 +12,11 @@ test('in-DOM Vue components use explicit end tags so table columns do not become
   assert.doesNotMatch(html, /<el-[\w-]+\b(?:"[^"]*"|'[^']*'|[^'">])*\/>/);
 });
 
-async function boot({ role='customer', restore=true, expired=false, orderError=false, loginError='', regError='', mock=false, full=false, transport={} }={}) {
+async function boot({ role='customer', restore=true, expired=false, orderError=false, loginError='', regError='', mock=false, full=false, transport={}, language='zh-CN' }={}) {
   let view;
   const requests=[], messages=[], mounted=[], watchers=[];
   const values = new Map();
+  values.set('ls_locale:phase_test',language);
   if (restore) {
     values.set('ls_token', 'test-session');
     values.set('ls_user', JSON.stringify({account:'phase_test',name:'Test',role}));
@@ -26,6 +27,7 @@ async function boot({ role='customer', restore=true, expired=false, orderError=f
   const sample = {no:'SF_TEST_ORDER',receiver:'Test',dest:'Test address',goods:'Books',weight:1,fee:12,
     status:'pending',time:'2026-10-26T00:00:00Z',eta:'2026-10-29T00:00:00Z',traces:[],fb:null};
   const context = vm.createContext({
+    document:{documentElement:{lang:'zh-CN'},title:''},
     console:{log(){}},localStorage:storage,sessionStorage:{getItem:()=>null,setItem(){},removeItem(){}},
     AbortController,URLSearchParams,FormData,setTimeout,clearTimeout,
     Vue:{reactive:x=>x,ref:x=>({value:x}),computed:get=>({get value(){return get();}}),
@@ -56,10 +58,68 @@ async function boot({ role='customer', restore=true, expired=false, orderError=f
   let script=source;
   if (mock) script=script.replace('USE_MOCK: false,','USE_MOCK: true,');
   if (!full) script=script.replace('PHASE_ONE: false,','PHASE_ONE: true,');
+  for(const file of ['logistics-i18n.js','vendor/element-plus-locale-en.min.js','vendor/element-plus-locale-zh-cn.min.js','vendor/element-plus-locale-zh-tw.min.js']) {
+    vm.runInContext(fs.readFileSync(path.join(__dirname,'../src/main/resources/static',file),'utf8'),context,{filename:file});
+  }
   vm.runInContext(script,context,{filename:'logistics-admin.inline.js'});
   await settle(); await settle();
-  return {view,requests,messages,watchers};
+  return {view,requests,messages,watchers,values,document:context.document};
 }
+
+for(const role of ['customer','staff','admin']) test(`${role}: language restoration and switching preserve form data and canonical API values`,async()=>{
+  const {view,values,document,requests}=await boot({role,full:true,language:'en'});
+  assert.equal(view.locale.value,'en');
+  assert.equal(document.documentElement.lang,'en');
+  assert.equal(view.elementLocale.value.name,'en');
+  const original=JSON.stringify(view.s);
+  for(const language of ['zh-TW','zh-CN','en']) {
+    view.setLocale(language);
+    assert.equal(JSON.stringify(view.s),original);
+    assert.equal(values.get('ls_locale:phase_test'),language);
+    assert.equal(document.documentElement.lang,language);
+  }
+  if(role==='customer') {
+    view.s.sendForm={to:'张三',dest:'测试路1号',goods:'图书文具',weight:1};
+    await view.submitSend();
+    const body=JSON.parse(requests.find(r=>r.url==='/api/orders' && r.method==='POST').body);
+    assert.equal(body.receiver,'张三');assert.equal(body.dest,'测试路1号');assert.equal(body.goods,'图书文具');
+  } else if(role==='admin') {
+    await view.onRoleChange({id:42,role:'物流员工',name:'张三',account:'another_user'});
+    assert.equal(JSON.parse(requests.find(r=>r.url==='/api/users/42/role').body).role,'物流员工');
+  } else {
+    view.s.invForm={type:'in',goods:'客户原文',qty:1,wh:'华东一号仓'};
+    await view.addInv();
+    assert.equal(JSON.parse(requests.find(r=>r.url==='/api/inventory'&&r.method==='POST').body).wh,'华东一号仓');
+  }
+});
+
+test('language preferences are isolated between accounts and survive logout',async()=>{
+  const {view,values}=await boot({full:true,language:'en'});
+  view.setLocale('zh-TW');
+  await view.doLogout(true);
+  values.set('ls_token','other-session');
+  values.set('ls_user',JSON.stringify({account:'other_user',name:'Other',role:'customer'}));
+  view.restoreSession();
+  assert.equal(view.locale.value,'zh-CN');
+  assert.equal(values.get('ls_locale:phase_test'),'zh-TW');
+  view.setLocale('en');
+  assert.equal(values.get('ls_locale:other_user'),'en');
+  view.setLocale('unsupported');
+  assert.equal(view.locale.value,'zh-CN');
+});
+
+test('translated messages retain interpolation, server reasons and staff notes',async()=>{
+  const {view}=await boot({full:true,language:'en'});
+  assert.equal(view.t('共 {count} 单',{count:17}).includes('17'),true);
+  assert.doesNotMatch(view.systemText('签收码不正确'),/[\u4e00-\u9fff]/);
+  assert.match(view.systemText('已揽收，运输中 · 请打电话'),/ · 请打电话$/);
+  assert.equal(view.systemText('Unexpected upstream failure'),'Unexpected upstream failure');
+  assert.match(view.systemText('已由张三签收，感谢使用'),/张三/);
+  assert.equal(view.systemText('pwd: 密码长度为 6-20 位'),'pwd: '+view.t('密码长度为 6-20 位'));
+  assert.equal(view.loginRules.value.account[0].message,view.t('请输入用户名'));
+  view.setLocale('zh-TW');
+  assert.equal(view.loginRules.value.account[0].message,view.t('请输入用户名'));
+});
 
 function onlyPhaseOneRequests(requests) {
   for (const request of requests) {
@@ -257,7 +317,7 @@ test('registration failure stays inside the form and retry can succeed',async()=
   assert.equal(view.s.auth.logged,false);
   assert.equal(view.s.auth.submitting,false);
   assert.equal(view.s.auth.regError,'该用户名已被注册，请直接登录');
-  assert.match(html, /<el-alert v-if="s.auth.regError"[^>]+:title="s.auth.regError"[^>]+:closable="false"/);
+  assert.match(html, /<el-alert v-if="s.auth.regError"[^>]+:title="systemText\(s.auth.regError\)"[^>]+:closable="false"/);
   for(const field of ['account','pwd','pwd2']) assert.ok(html.includes(`v-model="s.auth.reg.${field}" @input="s.auth.regError=''"`));
   const retry=await boot({restore:false,full:true});
   retry.view.regRef.value={validate:async()=>true,clearValidate(){}};
