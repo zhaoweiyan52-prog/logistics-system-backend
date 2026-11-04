@@ -1,0 +1,224 @@
+{
+  "info": {
+    "_postman_id": "5a5cda97-33dd-4d26-b5cd-a40e12c1fbd9",
+    "name": "Logistics System Customer Test",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "59438295",
+    "_collection_link": "https://go.postman.co/collection/59438295-5a5cda97-33dd-4d26-b5cd-a40e12c1fbd9?source=collection_link"
+  },
+  "item": [
+    {
+      "name": "Register",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Register success\", function () {\n    pm.expect(pm.response.json().code).to.eql(0);\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"testuser01\",\n    \"password\": \"Test123456\",\n    \"role\": \"customer\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "register"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Login success and get token\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.environment.set(\"token\", jsonData.data.token);\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"username\": \"testuser01\",\n    \"password\": \"Test123456\"\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/auth/login",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Create Parcel",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Create parcel success, save tracking number\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.environment.set(\"trackingNo\", jsonData.data.trackingNo);\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n    \"senderName\": \"Alice\",\n    \"senderAddress\": \"HKU\",\n    \"receiverName\": \"Bob\",\n    \"receiverAddress\": \"HKMU\",\n    \"weight\": 1.2\n}",
+          "options": {
+            "raw": {
+              "language": "json"
+            }
+          }
+        },
+        "url": {
+          "raw": "{{baseUrl}}/api/parcel/create",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "parcel",
+            "create"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Track Parcel",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Get parcel status successfully\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.expect(jsonData.data.trackingNo).to.eql(pm.environment.get(\"trackingNo\"));\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/parcel/track?trackingNo={{trackingNo}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "parcel",
+            "track"
+          ],
+          "query": [
+            {
+              "key": "trackingNo",
+              "value": "{{trackingNo}}"
+            }
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "View History",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Load parcel history list\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.expect(jsonData.data).to.be.an('array');\n});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/api/parcel/history",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "api",
+            "parcel",
+            "history"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
