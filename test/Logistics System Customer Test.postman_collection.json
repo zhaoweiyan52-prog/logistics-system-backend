@@ -113,7 +113,7 @@
         "header": [],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"senderName\": \"Alice\",\n    \"senderAddress\": \"HKU\",\n    \"receiverName\": \"Bob\",\n    \"receiverAddress\": \"HKMU\",\n    \"weight\": 1.2\n}",
+          "raw": "{\n    \"receiver\": \"Bob\",\n    \"dest\": \"HKMU\",\n    \"goods\": \"books\",\n    \"weight\": 1.2,\n    \"fee\": 25\n}",
           "options": {
             "raw": {
               "language": "json"
