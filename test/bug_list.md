@@ -3,6 +3,8 @@ Test Environment: Public backend https://logistics-system-backend-o7if.onrender.
 Version: 1eb7d99
 Tester: ZHANG Wenyu
 
+Developer follow-up: [B03 investigation and retest instructions](B03-investigation.md). A separate public create/list/detail run passed; B03 remains Open pending the original resolved request and retest. Confirmed Postman history URL/response-shape issues were corrected in the collection.
+
 | Bug ID | API Endpoint | Method | Request Body / Param | Expected Result | Actual Response | Reproduction Steps | Status |
 | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
 | B01 | /api/orders | POST | {<br>    "receiver": "Bob",<br>    "dest": "HKMU",<br>    "goods": "books",<br>    "weight": 1.2,<br>    "fee": 25<br>} | System generates unique tracking number for each parcel | Multiple orders created, all order no are distinct | 1. Register and login<br>2. Create several orders repeatedly<br>3. Check generated order no | Passed |

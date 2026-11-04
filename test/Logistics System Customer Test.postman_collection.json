@@ -93,7 +93,13 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"Create parcel success and get order no\", function () {\n    pm.response.to.have.status(200);\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.environment.set(\"orderNo\", jsonData.data.no);\n});"
+              "pm.test(\"Create parcel success and get order no\", function () {",
+              "    pm.response.to.have.status(200);",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.code, jsonData.message).to.eql(0);",
+              "    pm.expect(jsonData.data.no).to.match(/^SF[0-9]{8}[A-F0-9]{32}$/);",
+              "    pm.environment.set(\"orderNo\", jsonData.data.no);",
+              "});"
             ]
           }
         }
@@ -141,7 +147,19 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Get parcel status successfully\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n});"
+              "pm.test(\"Status code is 200\", function () {",
+              "    pm.response.to.have.status(200);",
+              "});",
+              "pm.test(\"Tracking variable matches the newly created order\", function () {",
+              "    pm.expect(pm.environment.get(\"orderNo\"), \"Run Create Parcel successfully first\").to.match(/^SF[0-9]{8}[A-F0-9]{32}$/);",
+              "    pm.expect(pm.variables.get(\"orderNo\"), \"Another scope overrides the environment orderNo\").to.eql(pm.environment.get(\"orderNo\"));",
+              "});",
+              "pm.test(\"Get the requested parcel and its tracking history\", function () {",
+              "    var jsonData = pm.response.json();",
+              "    pm.expect(jsonData.code, jsonData.message).to.eql(0);",
+              "    pm.expect(jsonData.data.no).to.eql(pm.environment.get(\"orderNo\"));",
+              "    pm.expect(jsonData.data.traces).to.be.an(\"array\");",
+              "});"
             ]
           }
         }
@@ -169,7 +187,8 @@
             "orders",
             "{{orderNo}}"
           ]
-        }
+        },
+        "description": "Uses data.no saved by Create Parcel, with the same customer token. If B03 occurs, record the resolved request URL and the matching history entry without exporting credentials."
       },
       "response": []
     },
@@ -181,7 +200,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Load parcel history list\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.expect(jsonData.data).to.be.an('array');\n});"
+              "pm.test(\"Status code is 200\", function () {\n    pm.response.to.have.status(200);\n});\npm.test(\"Load parcel history list\", function () {\n    var jsonData = pm.response.json();\n    pm.expect(jsonData.code).to.eql(0);\n    pm.expect(jsonData.data.list).to.be.an('array');\n    pm.expect(jsonData.data.total).to.be.a('number');\n});"
             ]
           }
         }
@@ -200,9 +219,9 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "GET {{baseUrl}}/api/orders",
+          "raw": "{{baseUrl}}/api/orders",
           "host": [
-            "GET {{baseUrl}}"
+            "{{baseUrl}}"
           ],
           "path": [
             "api",
